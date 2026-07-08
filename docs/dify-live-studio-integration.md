@@ -44,6 +44,8 @@ The repository snapshot under `templates/live-studio/references/shvdn/` is the v
 
 For Dify, import the generated Markdown pack under `docs/dify-knowledge/shvdn/` into a Dify Knowledge Base, for example `GTA5 SHVDN v3 Reference`. `Mod.cs Generator` and `QA Fixer` must use Knowledge Base retrieval output as their SHVDN context.
 
+Also import `docs/dify-knowledge/live-studio-template/template-contract.md` into Dify. This is the fixed template API contract for generated `Mod.cs`, covering `LiveStudioClient`, `ChatEvent.Content`, `GiftEvent.GiftId` as a string, `GiftEvent.RepeatEnd`, and `MainThreadDispatcher.Enqueue(...)`. These are not SHVDN APIs, so the SHVDN knowledge pack alone is not enough.
+
 Do not write prompts that tell Dify to "look at" local repository paths. Those paths are only visible to GitHub Actions and local developers.
 
 ## Node Contracts
@@ -152,6 +154,8 @@ namespace ModProject
 Rules:
 
 - Use `LiveStudioClient`, `ChatEvent`, `GiftEvent`, and `MainThreadDispatcher` from the fixed template.
+- Use `chat.Content` for chat text. Do not use `chat.Message` or `chat.Text`.
+- `gift.GiftId` is a `string`; compare it with quoted values such as `"5655"`.
 - Do not regenerate template support classes.
 - Do not call `World.*`, `Game.*`, `Ped`, `Vehicle`, or UI APIs directly from WebSocket callbacks.
 - Use `MainThreadDispatcher.Enqueue(...)` for game-world changes.

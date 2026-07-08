@@ -22,3 +22,5 @@ The stable LIVE Studio WebSocket, parser, event, dispatcher, and project files l
 The template also bundles SHVDN knowledge under `templates/live-studio/references/shvdn/`: `INDEX.md` for human navigation and `capabilities.json` for machine-readable API lookup. This is the repository source of truth.
 
 Dify cannot read repository paths automatically. Import the generated Markdown knowledge pack under `docs/dify-knowledge/shvdn/` into a Dify Knowledge Base, then connect that retrieval output to `Mod.cs Generator` and `QA Fixer`.
+
+Also import `docs/dify-knowledge/live-studio-template/template-contract.md` so Dify knows the fixed template API, including `ChatEvent.Content`, string `GiftEvent.GiftId`, and `MainThreadDispatcher.Enqueue(...)`.

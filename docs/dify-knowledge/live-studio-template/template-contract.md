@@ -1,0 +1,184 @@
+# Dify Knowledge: LIVE Studio Template Contract
+
+This document is for Dify Knowledge Base retrieval. It describes the fixed LIVE Studio template API exposed to generated `ModProject/Mod.cs`.
+
+These APIs are repository template APIs, not SHVDN APIs. When this document conflicts with generic chat/gift examples, use this document.
+
+## Generated File Boundary
+
+Dify generates only:
+
+- `DESIGN.md`
+- `ModProject/Mod.cs`
+
+Dify must not regenerate:
+
+- `LiveStudioClient`
+- `LiveStudioParser`
+- `LiveStudioEvents`
+- `MainThreadDispatcher`
+- `ModProject.csproj`
+- `Directory.Build.props`
+- `scripts/build-mod.ps1`
+
+Generated `Mod.cs` must use:
+
+```csharp
+namespace ModProject
+{
+    public class Mod : Script
+    {
+    }
+}
+```
+
+## Required Template Types
+
+Use these template classes from `ModProject.LiveStudio`:
+
+- `LiveStudioClient`
+- `LiveStudioEvent`
+- `ChatEvent`
+- `GiftEvent`
+- `MainThreadDispatcher`
+
+Recommended imports:
+
+```csharp
+using System;
+using System.Collections.Generic;
+using GTA;
+using GTA.Math;
+using GTA.Native;
+using GTA.UI;
+using ModProject.LiveStudio;
+```
+
+If generated code uses `Vector3`, it must include `using GTA.Math;`.
+
+## LiveStudioClient API
+
+Constructor:
+
+```csharp
+new LiveStudioClient(Action<LiveStudioEvent> onEvent, Action<string> onLog = null)
+```
+
+Members:
+
+- `Start()`
+- `Stop()`
+- `Dispose()`
+- `IsRunning`
+
+Recommended lifecycle:
+
+```csharp
+_client = new LiveStudioClient(
+    onEvent: HandleEvent,
+    onLog: msg => MainThreadDispatcher.Enqueue(() => Notification.Show("~y~" + msg)));
+_client.Start();
+```
+
+Cleanup:
+
+```csharp
+_client?.Dispose();
+```
+
+## ChatEvent API
+
+Properties:
+
+- `UserId` (`string`)
+- `Nickname` (`string`)
+- `Content` (`string`)
+- `MsgId` (`string`, inherited)
+- `CreateTime` (`long`, inherited)
+
+Rules:
+
+- Use `ChatEvent.Content` for chat message text.
+- Do not use `ChatEvent.Message`; it does not exist.
+- Do not use `ChatEvent.Text`; it does not exist.
+
+Example:
+
+```csharp
+if (!string.IsNullOrEmpty(chat.Content) &&
+    chat.Content.Trim().Equals("ping", StringComparison.OrdinalIgnoreCase))
+{
+    MainThreadDispatcher.Enqueue(() =>
+    {
+        GTA.UI.Screen.ShowSubtitle("Ping received");
+        Game.Player.Character.Armor = Math.Min(100, Game.Player.Character.Armor + 25);
+    });
+}
+```
+
+## GiftEvent API
+
+Properties:
+
+- `UserId` (`string`)
+- `Nickname` (`string`)
+- `GiftId` (`string`)
+- `GiftName` (`string`)
+- `DiamondCount` (`int`)
+- `RepeatCount` (`int`)
+- `RepeatEnd` (`bool`)
+- `ComboCount` (`int`)
+- `MsgId` (`string`, inherited)
+- `CreateTime` (`long`, inherited)
+
+Rules:
+
+- `GiftEvent.GiftId` is a string.
+- Compare gift ids as string literals: `gift.GiftId == "5655"`.
+- Never compare gift ids as integers: `gift.GiftId == 5655` is invalid.
+- For one-shot gift effects, check `gift.RepeatEnd` unless `DESIGN.md` explicitly says otherwise.
+
+Example:
+
+```csharp
+if (gift.GiftId == "5655" && gift.RepeatEnd)
+{
+    MainThreadDispatcher.Enqueue(() =>
+    {
+        GTA.UI.Screen.ShowSubtitle(gift.Nickname + " sent Rose");
+    });
+}
+```
+
+## Threading Rules
+
+LIVE Studio callbacks run on a background WebSocket thread.
+
+All GTA world changes and UI calls from chat/gift handlers must be scheduled with:
+
+```csharp
+MainThreadDispatcher.Enqueue(() =>
+{
+    // GTA world or UI calls here.
+});
+```
+
+`OnTick` must call:
+
+```csharp
+MainThreadDispatcher.DrainOnTick();
+```
+
+## Invalid Patterns
+
+Generated `Mod.cs` must not contain:
+
+- `chat.Message`
+- `chat.Text`
+- `gift.GiftId == 5655`
+- `GTA.KeyEventArgs`
+- `UI.Notify`
+- `Entity.CreatedAt`, `Ped.CreatedAt`, `Vehicle.CreatedAt`
+- custom WebSocket client, parser, or dispatcher implementations
+- `Newtonsoft.Json`
+- `System.Text.Json`

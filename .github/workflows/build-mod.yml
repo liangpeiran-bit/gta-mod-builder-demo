@@ -64,6 +64,17 @@ jobs:
           $mod = [System.Text.Encoding]::UTF8.GetString($modBytes)
           $mod = [regex]::Replace($mod, '(?<![A-Za-z0-9_.])Screen\.ShowSubtitle', 'GTA.UI.Screen.ShowSubtitle')
           $mod = $mod -replace 'GTA\.KeyEventArgs', 'KeyEventArgs'
+          # Normalize known LIVE Studio template API slips from LLM output.
+          # ChatEvent does not expose Message/Text; the fixed template field is Content.
+          $mod = [regex]::Replace($mod, '\b(chat|chatEvent)\.(Message|Text)\b', '$1.Content')
+          $mod = [regex]::Replace($mod, '(\.GiftId\s*(?:==|!=)\s*)(\d+)\b', '$1"$2"')
+          if ($mod -match '\bVector3\b' -and $mod -notmatch 'using\s+GTA\.Math\s*;') {
+            if ($mod -match 'using\s+GTA\s*;') {
+              $mod = [regex]::Replace($mod, 'using\s+GTA\s*;', "using GTA;`r`nusing GTA.Math;", 1)
+            } else {
+              $mod = "using GTA.Math;`r`n$mod"
+            }
+          }
           [System.IO.File]::WriteAllText("work/live-studio/ModProject/Mod.cs", $mod, [System.Text.UTF8Encoding]::new($false))
 
           [xml]$project = Get-Content -LiteralPath "work/live-studio/ModProject/ModProject.csproj"
