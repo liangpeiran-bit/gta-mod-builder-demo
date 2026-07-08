@@ -1,0 +1,10 @@
+{
+  "build_id": "dify-20260708054036-83691e7a",
+  "status": "failed",
+  "message": "Build failed. See build_log for details.",
+  "file_name": "VehicleRepairRocketBoostWantedClear.cs",
+  "assembly_name": "VehicleRepairRocketBoostWantedClear",
+  "download_url": null,
+  "created_at": "2026-07-08T05:41:44.9120469Z",
+  "build_log": "D:\\a\\gta-mod-builder-demo\\gta-mod-builder-demo\\work\\src\\VehicleRepairRocketBoostWantedClear.cs(29,47): error CS0234: The type or namespace name 'KeyEventArgs' does not exist in the namespace 'GTA' (are you missing an assembly reference?) [D:\\a\\gta-mod-builder-demo\\gta-mod-builder-demo\\work\\src\\GeneratedMod.csproj]\r\n\r\nBuild FAILED.\r\n\r\nD:\\a\\gta-mod-builder-demo\\gta-mod-builder-demo\\work\\src\\VehicleRepairRocketBoostWantedClear.cs(29,47): error CS0234: The type or namespace name 'KeyEventArgs' does not exist in the namespace 'GTA' (are you missing an assembly reference?) [D:\\a\\gta-mod-builder-demo\\gta-mod-builder-demo\\work\\src\\GeneratedMod.csproj]\r\n    0 Warning(s)\r\n    1 Error(s)\r\n\r\nTime Elapsed 00:00:09.75\r\n"
+}
