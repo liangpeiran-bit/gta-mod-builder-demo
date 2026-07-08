@@ -19,7 +19,7 @@
       padding: 32px;
     }
     main {
-      width: min(760px, 100%);
+      width: min(960px, 100%);
       border: 1px solid #303642;
       border-radius: 8px;
       background: #171a21;
@@ -83,6 +83,21 @@
       color: #cbd5e1;
       white-space: pre-wrap;
     }
+    details {
+      margin: 16px 0;
+      border: 1px solid #303642;
+      border-radius: 6px;
+      background: #11141b;
+    }
+    summary {
+      cursor: pointer;
+      padding: 12px 14px;
+      font-weight: 700;
+    }
+    details pre {
+      margin: 0;
+      border-radius: 0 0 6px 6px;
+    }
   </style>
 </head>
 <body>
@@ -131,6 +146,12 @@
         const download = data.download_url
           ? `<p><a class="button" href="${escapeHtml(data.download_url)}">Download DLL zip</a></p>`
           : "";
+        const designMd = data.design_md
+          ? `<details><summary>DESIGN.md</summary><pre>${escapeHtml(data.design_md)}</pre></details>`
+          : "";
+        const modCs = data.mod_cs
+          ? `<details><summary>Mod.cs</summary><pre>${escapeHtml(data.mod_cs)}</pre></details>`
+          : "";
 
         detailsEl.innerHTML = `
           ${download}
@@ -140,6 +161,8 @@
             <dt>Assembly</dt><dd>${escapeHtml(data.assembly_name || "")}</dd>
             <dt>Created</dt><dd>${escapeHtml(data.created_at || "")}</dd>
           </dl>
+          ${designMd}
+          ${modCs}
           ${data.status === "failed" ? `<h2>Build Log</h2><pre>${escapeHtml(data.build_log || "")}</pre>` : ""}
         `;
 
