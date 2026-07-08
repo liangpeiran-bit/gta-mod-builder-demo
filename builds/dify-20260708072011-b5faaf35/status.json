@@ -1,0 +1,10 @@
+{
+  "build_id": "dify-20260708072011-b5faaf35",
+  "status": "failed",
+  "message": "Build failed. See build_log for details.",
+  "file_name": "ChatBoostClearMod.cs",
+  "assembly_name": "ChatBoostClearMod",
+  "download_url": null,
+  "created_at": "2026-07-08T07:20:45.8100222Z",
+  "build_log": "D:\\a\\gta-mod-builder-demo\\gta-mod-builder-demo\\work\\src\\ChatBoostClearMod.cs(55,15): error CS1061: 'KeyEventArgs' does not contain a definition for 'Key' and no accessible extension method 'Key' accepting a first argument of type 'KeyEventArgs' could be found (are you missing a using directive or an assembly reference?) [D:\\a\\gta-mod-builder-demo\\gta-mod-builder-demo\\work\\src\\GeneratedMod.csproj]\r\nD:\\a\\gta-mod-builder-demo\\gta-mod-builder-demo\\work\\src\\ChatBoostClearMod.cs(62,20): error CS1061: 'KeyEventArgs' does not contain a definition for 'Key' and no accessible extension method 'Key' accepting a first argument of type 'KeyEventArgs' could be found (are you missing a using directive or an assembly reference?) [D:\\a\\gta-mod-builder-demo\\gta-mod-builder-demo\\work\\src\\GeneratedMod.csproj]\r\n\r\nBuild FAILED.\r\n\r\nD:\\a\\gta-mod-builder-demo\\gta-mod-builder-demo\\work\\src\\ChatBoostClearMod.cs(55,15): error CS1061: 'KeyEventArgs' does not contain a definition for 'Key' and no accessible extension method 'Key' accepting a first argument of type 'KeyEventArgs' could be found (are you missing a using directive or an assembly reference?) [D:\\a\\gta-mod-builder-demo\\gta-mod-builder-demo\\work\\src\\GeneratedMod.csproj]\r\nD:\\a\\gta-mod-builder-demo\\gta-mod-builder-demo\\work\\src\\ChatBoostClearMod.cs(62,20): error CS1061: 'KeyEventArgs' does not contain a definition for 'Key' and no accessible extension method 'Key' accepting a first argument of type 'KeyEventArgs' could be found (are you missing a using directive or an assembly reference?) [D:\\a\\gta-mod-builder-demo\\gta-mod-builder-demo\\work\\src\\GeneratedMod.csproj]\r\n    0 Warning(s)\r\n    2 Error(s)\r\n\r\nTime Elapsed 00:00:04.67\r\n"
+}
