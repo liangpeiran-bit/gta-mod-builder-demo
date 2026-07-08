@@ -1,0 +1,59 @@
+# Gift Catalog - LIVE Studio TikTok Gifts (common SG snapshot subset)
+# Format: <id> | <name> | <diamondCount>
+# Match strategy:
+#   1. Lowercase the user phrase and the name column.
+#   2. Substring match name against phrase and phrase against name.
+#   3. Token overlap as a fallback when no substring match.
+#   4. Always return a candidate set, never silently pick one when ambiguous.
+#   5. When ambiguous or empty, ask the user to choose a candidate, redescribe,
+#      or provide the numeric gift_id.
+#
+# Static snapshot caveat:
+#   This is not a room-specific or real-time gift list. If the desired gift is
+#   absent, ask the user for the gift_id instead of guessing.
+
+59881  | A Shard of Hope       | 1
+6784   | Cake Slice            | 1
+19441  | Freestyle             | 1
+6064   | GG                    | 1
+6788   | Glow Stick            | 1
+7934   | Heart Me              | 1
+5827   | Ice Cream Cone        | 1
+19439  | Oldies                | 1
+19438  | Pop                   | 1
+10585  | Rendang Chicken       | 1
+5655   | Rose                  | 1
+5269   | TikTok                | 1
+19446  | Wink wink             | 1
+15232  | You're awesome        | 1
+5487   | Finger Heart          | 5
+19445  | Name shoutout         | 5
+19447  | Overreact             | 5
+9947   | Friendship Necklace   | 10
+116012 | I love you            | 10
+15063  | Journey Pass          | 10
+8913   | Rosa                  | 10
+19448  | Slow motion           | 10
+19443  | Bravo!                | 15
+5658   | Perfume               | 20
+5879   | Doughnut              | 30
+17460  | You are on a Roll     | 30
+14038  | Butterfly             | 88
+16812  | Takoyaki              | 88
+17729  | Family                | 90
+13087  | Bubble Gum            | 99
+6104   | Cap                   | 99
+17922  | Charmer Bow           | 99
+6427   | Hat and Mustache      | 99
+6097   | Little Crown          | 99
+11180  | Love Painting         | 99
+14109  | Mark of Love          | 99
+5659   | Paper Crane           | 99
+17105  | Sundae Bowl           | 99
+13212  | Balloon Gift Box      | 100
+13898  | Bouquet               | 100
+17903  | Compact               | 100
+5585   | Confetti              | 100
+5660   | Hand Hearts           | 100
+17585  | Match Wand            | 100
+5582   | Mishka Bear           | 100
