@@ -158,6 +158,7 @@ Rules:
 - `gift.GiftId` is a `string`; compare it with quoted values such as `"5655"`.
 - `LiveStudioClient` `onEvent` expects `Action<LiveStudioEvent>`; use `HandleEvent(LiveStudioEvent evt)`, not `HandleEvent(object sender, object e)`.
 - Track spawned vehicles as `Vehicle` objects. Do not store handles and do not use `new Vehicle(handle)`.
+- Prefer fully qualified UI calls: `GTA.UI.Screen.ShowSubtitle(...)` and `GTA.UI.Notification.Show(...)`.
 - Do not regenerate template support classes.
 - Do not call `World.*`, `Game.*`, `Ped`, `Vehicle`, or UI APIs directly from WebSocket callbacks.
 - Use `MainThreadDispatcher.Enqueue(...)` for game-world changes.

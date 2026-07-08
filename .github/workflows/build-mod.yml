@@ -63,6 +63,7 @@ jobs:
           $modBytes = [System.Convert]::FromBase64String("${{ inputs.mod_cs_b64 }}")
           $mod = [System.Text.Encoding]::UTF8.GetString($modBytes)
           $mod = [regex]::Replace($mod, '(?<![A-Za-z0-9_.])Screen\.ShowSubtitle', 'GTA.UI.Screen.ShowSubtitle')
+          $mod = [regex]::Replace($mod, '(?<![A-Za-z0-9_.])Notification\.Show', 'GTA.UI.Notification.Show')
           $mod = $mod -replace 'GTA\.KeyEventArgs', 'KeyEventArgs'
           # Normalize known LIVE Studio template API slips from LLM output.
           # ChatEvent does not expose Message/Text; the fixed template field is Content.

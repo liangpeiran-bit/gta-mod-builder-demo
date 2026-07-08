@@ -56,6 +56,13 @@ using ModProject.LiveStudio;
 
 If generated code uses `Vector3`, it must include `using GTA.Math;`.
 
+For UI feedback, prefer fully qualified calls:
+
+- `GTA.UI.Screen.ShowSubtitle(...)`
+- `GTA.UI.Notification.Show(...)`
+
+If using unqualified `Notification.Show(...)`, include `using GTA.UI;`.
+
 ## LiveStudioClient API
 
 Constructor:
@@ -76,7 +83,7 @@ Recommended lifecycle:
 ```csharp
 _client = new LiveStudioClient(
     onEvent: HandleEvent,
-    onLog: msg => MainThreadDispatcher.Enqueue(() => Notification.Show("~y~" + msg)));
+    onLog: msg => MainThreadDispatcher.Enqueue(() => GTA.UI.Notification.Show("~y~" + msg)));
 _client.Start();
 ```
 
@@ -209,6 +216,7 @@ Generated `Mod.cs` must not contain:
 - `new Vehicle(handle)`
 - `GTA.KeyEventArgs`
 - `UI.Notify`
+- unqualified `Notification.Show(...)` without `using GTA.UI;`
 - `Entity.CreatedAt`, `Ped.CreatedAt`, `Vehicle.CreatedAt`
 - custom WebSocket client, parser, or dispatcher implementations
 - `Newtonsoft.Json`

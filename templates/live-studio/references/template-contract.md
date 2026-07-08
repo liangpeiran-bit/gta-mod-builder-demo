@@ -45,6 +45,13 @@ using ModProject.LiveStudio;
 
 Add `using GTA.Math;` when using `Vector3`.
 
+For UI feedback, prefer fully qualified calls:
+
+- `GTA.UI.Screen.ShowSubtitle(...)`
+- `GTA.UI.Notification.Show(...)`
+
+If using unqualified `Notification.Show(...)`, include `using GTA.UI;`.
+
 ## LiveStudioClient
 
 Available constructor:
@@ -65,7 +72,7 @@ Recommended lifecycle:
 ```csharp
 _client = new LiveStudioClient(
     onEvent: HandleEvent,
-    onLog: msg => MainThreadDispatcher.Enqueue(() => Notification.Show("~y~" + msg)));
+    onLog: msg => MainThreadDispatcher.Enqueue(() => GTA.UI.Notification.Show("~y~" + msg)));
 _client.Start();
 ```
 
@@ -229,6 +236,7 @@ Do not use:
 - `new Vehicle(handle)`
 - `GTA.KeyEventArgs`
 - `UI.Notify`
+- unqualified `Notification.Show(...)` without `using GTA.UI;`
 - `Entity.CreatedAt`, `Ped.CreatedAt`, `Vehicle.CreatedAt`
 - `Newtonsoft.Json`
 - `System.Text.Json`
