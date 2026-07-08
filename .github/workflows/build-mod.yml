@@ -68,6 +68,10 @@ jobs:
           # ChatEvent does not expose Message/Text; the fixed template field is Content.
           $mod = [regex]::Replace($mod, '\b(chat|chatEvent)\.(Message|Text)\b', '$1.Content')
           $mod = [regex]::Replace($mod, '(\.GiftId\s*(?:==|!=)\s*)(\d+)\b', '$1"$2"')
+          $mod = [regex]::Replace($mod, 'private\s+void\s+HandleEvent\s*\(\s*object\s+sender\s*,\s*object\s+([A-Za-z_][A-Za-z0-9_]*)\s*\)', 'private void HandleEvent(LiveStudioEvent $1)')
+          $mod = [regex]::Replace($mod, 'HashSet<int>\s+_spawnedVehicles\s*=\s*new\s+HashSet<int>\s*\(\s*\)', 'List<Vehicle> _spawnedVehicles = new List<Vehicle>()')
+          $mod = [regex]::Replace($mod, '_spawnedVehicles\.Add\(\s*([A-Za-z_][A-Za-z0-9_]*)\.Handle\s*\)', '_spawnedVehicles.Add($1)')
+          $mod = [regex]::Replace($mod, 'foreach\s*\(\s*int\s+handle\s+in\s+_spawnedVehicles\s*\)\s*\{\s*Vehicle\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*new Vehicle\(handle\)\s*;', 'foreach (Vehicle $1 in _spawnedVehicles) {')
           if ($mod -match '\bVector3\b' -and $mod -notmatch 'using\s+GTA\.Math\s*;') {
             if ($mod -match 'using\s+GTA\s*;') {
               $mod = [regex]::Replace($mod, 'using\s+GTA\s*;', "using GTA;`r`nusing GTA.Math;", 1)

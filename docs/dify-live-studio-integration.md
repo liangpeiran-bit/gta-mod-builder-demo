@@ -156,6 +156,8 @@ Rules:
 - Use `LiveStudioClient`, `ChatEvent`, `GiftEvent`, and `MainThreadDispatcher` from the fixed template.
 - Use `chat.Content` for chat text. Do not use `chat.Message` or `chat.Text`.
 - `gift.GiftId` is a `string`; compare it with quoted values such as `"5655"`.
+- `LiveStudioClient` `onEvent` expects `Action<LiveStudioEvent>`; use `HandleEvent(LiveStudioEvent evt)`, not `HandleEvent(object sender, object e)`.
+- Track spawned vehicles as `Vehicle` objects. Do not store handles and do not use `new Vehicle(handle)`.
 - Do not regenerate template support classes.
 - Do not call `World.*`, `Game.*`, `Ped`, `Vehicle`, or UI APIs directly from WebSocket callbacks.
 - Use `MainThreadDispatcher.Enqueue(...)` for game-world changes.

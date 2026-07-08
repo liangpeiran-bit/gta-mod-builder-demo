@@ -86,6 +86,14 @@ Cleanup:
 _client?.Dispose();
 ```
 
+`LiveStudioClient` expects `Action<LiveStudioEvent>`, so event handlers must take exactly one `LiveStudioEvent` parameter:
+
+```csharp
+private void HandleEvent(LiveStudioEvent evt)
+```
+
+Do not use `HandleEvent(object sender, object e)` for `LiveStudioClient`.
+
 ## ChatEvent API
 
 Properties:
@@ -169,6 +177,27 @@ MainThreadDispatcher.Enqueue(() =>
 MainThreadDispatcher.DrainOnTick();
 ```
 
+## Entity Tracking
+
+Track spawned entities as SHVDN entity objects, not integer handles.
+
+Good vehicle tracking:
+
+```csharp
+private readonly List<Vehicle> _spawnedVehicles = new List<Vehicle>();
+_spawnedVehicles.Add(vehicle);
+```
+
+Invalid vehicle tracking:
+
+```csharp
+private readonly HashSet<int> _spawnedVehicles = new HashSet<int>();
+_spawnedVehicles.Add(vehicle.Handle);
+Vehicle vehicle = new Vehicle(handle);
+```
+
+Do not use `new Vehicle(handle)`. SHVDN v3 generated code should keep and clean up the `Vehicle` object returned by `World.CreateVehicle(...)`.
+
 ## Invalid Patterns
 
 Generated `Mod.cs` must not contain:
@@ -176,6 +205,8 @@ Generated `Mod.cs` must not contain:
 - `chat.Message`
 - `chat.Text`
 - `gift.GiftId == 5655`
+- `HandleEvent(object sender, object e)`
+- `new Vehicle(handle)`
 - `GTA.KeyEventArgs`
 - `UI.Notify`
 - `Entity.CreatedAt`, `Ped.CreatedAt`, `Vehicle.CreatedAt`

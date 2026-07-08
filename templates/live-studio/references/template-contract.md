@@ -78,6 +78,14 @@ Base properties:
 - `MsgId` (`string`)
 - `CreateTime` (`long`)
 
+`LiveStudioClient` expects `Action<LiveStudioEvent>`, so generated handlers must take exactly one `LiveStudioEvent` parameter:
+
+```csharp
+private void HandleEvent(LiveStudioEvent evt)
+```
+
+Do not write event-style handlers such as `HandleEvent(object sender, object e)` for `LiveStudioClient`.
+
 Generated code should switch on concrete event types:
 
 ```csharp
@@ -189,6 +197,27 @@ private void OnTick(object sender, EventArgs e)
 }
 ```
 
+## Entity Tracking
+
+Track spawned vehicles and peds as entity objects, not integer handles.
+
+Good:
+
+```csharp
+private readonly List<Vehicle> _spawnedVehicles = new List<Vehicle>();
+_spawnedVehicles.Add(vehicle);
+```
+
+Invalid:
+
+```csharp
+private readonly HashSet<int> _spawnedVehicles = new HashSet<int>();
+_spawnedVehicles.Add(vehicle.Handle);
+Vehicle vehicle = new Vehicle(handle);
+```
+
+Do not use `new Vehicle(handle)`. SHVDN v3 does not expose a public `Vehicle` constructor that takes a handle in generated code.
+
 ## Prohibited Patterns
 
 Do not use:
@@ -196,6 +225,8 @@ Do not use:
 - `chat.Message`
 - `chat.Text`
 - `gift.GiftId == 5655`
+- `HandleEvent(object sender, object e)` for `LiveStudioClient`
+- `new Vehicle(handle)`
 - `GTA.KeyEventArgs`
 - `UI.Notify`
 - `Entity.CreatedAt`, `Ped.CreatedAt`, `Vehicle.CreatedAt`
