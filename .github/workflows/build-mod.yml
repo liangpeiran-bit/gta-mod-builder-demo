@@ -59,6 +59,7 @@ jobs:
 
           $sourceBytes = [System.Convert]::FromBase64String("${{ inputs.source_b64 }}")
           $source = [System.Text.Encoding]::UTF8.GetString($sourceBytes)
+          $source = [regex]::Replace($source, '(?<![A-Za-z0-9_.])Screen\.ShowSubtitle', 'GTA.UI.Screen.ShowSubtitle')
           $sourcePath = Join-Path "work/src" $fileName
           [System.IO.File]::WriteAllText($sourcePath, $source, [System.Text.UTF8Encoding]::new($false))
 
