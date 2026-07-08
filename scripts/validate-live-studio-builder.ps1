@@ -81,6 +81,8 @@ Assert-Contains ".github/workflows/build-mod.yml" "using GTA.Math;" "Workflow mu
 Assert-Contains ".github/workflows/build-mod.yml" "HandleEvent\(LiveStudioEvent" "Workflow must normalize generated HandleEvent signatures to Action<LiveStudioEvent>."
 Assert-Contains ".github/workflows/build-mod.yml" "HashSet<int>.*List<Vehicle>" "Workflow must normalize invalid Vehicle handle reconstruction."
 Assert-Contains ".github/workflows/build-mod.yml" "Notification\\.Show" "Workflow must normalize unqualified Notification.Show calls."
+Assert-Contains ".github/workflows/build-mod.yml" "GetNextPositionOnStreet" "Workflow must normalize unsupported GetNextPositionOnStreet overloads."
+Assert-Contains ".github/workflows/build-mod.yml" "CreateVehicle\(VehicleHash" "Workflow must normalize unsupported CreateVehicle overloads."
 Assert-NotContains ".github/workflows/build-mod.yml" "source_b64:" "Legacy single-file source_b64 input must be removed."
 Assert-NotContains ".github/workflows/build-mod.yml" "file_name:" "Legacy single-file file_name input must be removed."
 
@@ -99,6 +101,7 @@ Assert-Contains "templates/live-studio/references/template-contract.md" "ChatEve
 Assert-Contains "templates/live-studio/references/template-contract.md" "GiftEvent.GiftId.*string" "Template contract must document GiftEvent.GiftId as string."
 Assert-Contains "templates/live-studio/references/template-contract.md" 'Do not use `new Vehicle\(handle\)`' "Template contract must forbid Vehicle handle reconstruction."
 Assert-Contains "templates/live-studio/references/template-contract.md" "GTA.UI.Notification.Show" "Template contract must document notification qualification."
+Assert-Contains "templates/live-studio/references/template-contract.md" "World.CreateVehicle.*3 arguments" "Template contract must document CreateVehicle overload constraints."
 Assert-Contains "docs/dify-knowledge/live-studio-template/template-contract.md" "MainThreadDispatcher.Enqueue" "Dify template knowledge must document dispatcher usage."
 Assert-Contains "README.md" "LIVE Studio" "README must describe the LIVE Studio builder."
 Assert-Contains "README.md" "references/shvdn" "README must mention the bundled SHVDN reference snapshot."

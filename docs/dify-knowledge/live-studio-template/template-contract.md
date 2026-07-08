@@ -205,6 +205,32 @@ Vehicle vehicle = new Vehicle(handle);
 
 Do not use `new Vehicle(handle)`. SHVDN v3 generated code should keep and clean up the `Vehicle` object returned by `World.CreateVehicle(...)`.
 
+## SHVDN World API Constraints
+
+Use SHVDN v3 overloads that exist in the template build.
+
+Good:
+
+```csharp
+Vector3 spawnPos = World.GetNextPositionOnStreet(player.Position.Around(2.0f));
+float heading = player.Heading;
+Vehicle vehicle = World.CreateVehicle(VehicleHash.Police, spawnPos, heading);
+```
+
+Invalid:
+
+```csharp
+Vector3 streetPos;
+float heading;
+if (!World.GetNextPositionOnStreet(player.Position, out streetPos, out heading)) return;
+Vehicle vehicle = World.CreateVehicle(VehicleHash.Police, streetPos, heading, VehicleLockStatus.None);
+```
+
+Rules:
+
+- Do not treat `World.GetNextPositionOnStreet(...)` as a bool-returning `out` API. It returns a `Vector3`.
+- Do not call `World.CreateVehicle(VehicleHash, Vector3, float, VehicleLockStatus)`. Use 3 arguments: model/hash, position, heading.
+
 ## Invalid Patterns
 
 Generated `Mod.cs` must not contain:
@@ -214,6 +240,8 @@ Generated `Mod.cs` must not contain:
 - `gift.GiftId == 5655`
 - `HandleEvent(object sender, object e)`
 - `new Vehicle(handle)`
+- `World.GetNextPositionOnStreet(..., out ..., out ...)`
+- `World.CreateVehicle(..., ..., ..., VehicleLockStatus.None)`
 - `GTA.KeyEventArgs`
 - `UI.Notify`
 - unqualified `Notification.Show(...)` without `using GTA.UI;`

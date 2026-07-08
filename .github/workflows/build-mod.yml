@@ -73,6 +73,14 @@ jobs:
           $mod = [regex]::Replace($mod, 'HashSet<int>\s+_spawnedVehicles\s*=\s*new\s+HashSet<int>\s*\(\s*\)', 'List<Vehicle> _spawnedVehicles = new List<Vehicle>()')
           $mod = [regex]::Replace($mod, '_spawnedVehicles\.Add\(\s*([A-Za-z_][A-Za-z0-9_]*)\.Handle\s*\)', '_spawnedVehicles.Add($1)')
           $mod = [regex]::Replace($mod, 'foreach\s*\(\s*int\s+handle\s+in\s+_spawnedVehicles\s*\)\s*\{\s*Vehicle\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*new Vehicle\(handle\)\s*;', 'foreach (Vehicle $1 in _spawnedVehicles) {')
+          $mod = [regex]::Replace(
+            $mod,
+            'if\s*\(\s*!World\.GetNextPositionOnStreet\(([^;]*?),\s*out\s+([A-Za-z_][A-Za-z0-9_]*)\s*,\s*out\s+([A-Za-z_][A-Za-z0-9_]*)\)\s*\)\s*\{[\s\S]*?return;\s*\}',
+            [System.Text.RegularExpressions.MatchEvaluator]{
+              param($m)
+              "$($m.Groups[2].Value) = World.GetNextPositionOnStreet($($m.Groups[1].Value));`r`n                $($m.Groups[3].Value) = Game.Player.Character.Heading;"
+            })
+          $mod = [regex]::Replace($mod, 'World\.CreateVehicle\(\s*VehicleHash\.([A-Za-z0-9_]+)\s*,\s*([^,\r\n]+)\s*,\s*([^,\r\n]+)\s*,\s*VehicleLockStatus\.[A-Za-z0-9_]+\s*\)', 'World.CreateVehicle(VehicleHash.$1, $2, $3)')
           if ($mod -match '\bVector3\b' -and $mod -notmatch 'using\s+GTA\.Math\s*;') {
             if ($mod -match 'using\s+GTA\s*;') {
               $mod = [regex]::Replace($mod, 'using\s+GTA\s*;', "using GTA;`r`nusing GTA.Math;", 1)
