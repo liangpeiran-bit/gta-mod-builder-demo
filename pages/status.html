@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GTA Mod Build Status</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f1115;
+      color: #f3f5f7;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 32px;
+    }
+    main {
+      width: min(760px, 100%);
+      border: 1px solid #303642;
+      border-radius: 8px;
+      background: #171a21;
+      padding: 28px;
+      box-shadow: 0 16px 48px rgb(0 0 0 / 28%);
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+    .muted {
+      color: #9aa4b2;
+    }
+    .status {
+      margin: 24px 0 16px;
+      padding: 14px 16px;
+      border-radius: 6px;
+      background: #222733;
+      font-weight: 700;
+    }
+    .success {
+      background: #10351f;
+      color: #8df2ad;
+    }
+    .failed {
+      background: #3a1717;
+      color: #ff9b9b;
+    }
+    a.button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0 16px;
+      border-radius: 6px;
+      background: #2f7cf6;
+      color: white;
+      text-decoration: none;
+      font-weight: 700;
+    }
+    dl {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 8px 12px;
+      margin: 20px 0;
+    }
+    dt {
+      color: #9aa4b2;
+    }
+    dd {
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+    pre {
+      max-height: 260px;
+      overflow: auto;
+      padding: 14px;
+      border-radius: 6px;
+      background: #0b0d12;
+      color: #cbd5e1;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>GTA Mod Build Status</h1>
+    <p class="muted">This page updates automatically while GitHub Actions compiles your ScriptHookVDotNet mod.</p>
+    <div id="status" class="status">Waiting for build id...</div>
+    <div id="details"></div>
+  </main>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const id = params.get("id") || "";
+    const statusEl = document.getElementById("status");
+    const detailsEl = document.getElementById("details");
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    async function poll() {
+      if (!id) {
+        statusEl.textContent = "Missing build id.";
+        statusEl.className = "status failed";
+        return;
+      }
+
+      try {
+        const res = await fetch(`builds/${encodeURIComponent(id)}/status.json?t=${Date.now()}`, { cache: "no-store" });
+        if (res.status === 404) {
+          statusEl.textContent = "Build queued or still running...";
+          statusEl.className = "status";
+          setTimeout(poll, 5000);
+          return;
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        statusEl.textContent = data.message || data.status || "Unknown status";
+        statusEl.className = `status ${data.status === "success" ? "success" : data.status === "failed" ? "failed" : ""}`;
+
+        const download = data.download_url
+          ? `<p><a class="button" href="${escapeHtml(data.download_url)}">Download DLL zip</a></p>`
+          : "";
+
+        detailsEl.innerHTML = `
+          ${download}
+          <dl>
+            <dt>Build ID</dt><dd>${escapeHtml(data.build_id)}</dd>
+            <dt>Source</dt><dd>${escapeHtml(data.file_name)}</dd>
+            <dt>Assembly</dt><dd>${escapeHtml(data.assembly_name || "")}</dd>
+            <dt>Created</dt><dd>${escapeHtml(data.created_at || "")}</dd>
+          </dl>
+          ${data.status === "failed" ? `<h2>Build Log</h2><pre>${escapeHtml(data.build_log || "")}</pre>` : ""}
+        `;
+
+        if (data.status !== "success" && data.status !== "failed") {
+          setTimeout(poll, 5000);
+        }
+      }
+      catch (error) {
+        statusEl.textContent = "Waiting for build result...";
+        statusEl.className = "status";
+        setTimeout(poll, 5000);
+      }
+    }
+
+    poll();
+  </script>
+</body>
+</html>
