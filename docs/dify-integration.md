@@ -33,14 +33,48 @@ def _clean_assembly_name(value: str) -> str:
     value = value.strip("._-")
     return value or "LiveStudioMod"
 
+def _strip_reasoning(text: str) -> str:
+    text = text or ""
+    text = re.sub(r"<think>[\s\S]*?</think>", "", text, flags=re.IGNORECASE)
+    if "<think>" in text.lower():
+        fence = re.search(r"```", text)
+        if fence:
+            text = text[fence.start():]
+    return text.strip()
+
+def _extract_design_md(text: str) -> str:
+    text = _strip_reasoning(text)
+    fences = re.findall(r"```(?:markdown|md)?\s*([\s\S]*?)```", text, flags=re.IGNORECASE)
+    if fences:
+        return fences[-1].strip()
+    return text.strip()
+
 def _extract_mod_cs(text: str) -> str:
-    match = re.search(r"```(?:csharp|cs)?\\s*([\\s\\S]*?)```", text or "", re.IGNORECASE)
-    return (match.group(1) if match else text or "").strip()
+    text = _strip_reasoning(text)
+    csharp_fences = re.findall(r"```(?:csharp|cs|c#)\s*([\s\S]*?)```", text, flags=re.IGNORECASE)
+    if csharp_fences:
+        source = csharp_fences[-1]
+    else:
+        fences = re.findall(r"```(?:[A-Za-z0-9_-]+)?\s*([\s\S]*?)```", text)
+        code_like = [f for f in fences if "public class" in f or "namespace ModProject" in f or "using GTA" in f]
+        source = code_like[-1] if code_like else text
+
+    source = source.replace("\r\n", "\n").strip()
+    starts = [idx for idx in [
+        source.find("using System"),
+        source.find("using GTA"),
+        source.find("namespace ModProject"),
+        source.find("public class Mod"),
+    ] if idx >= 0]
+    if starts:
+        source = source[min(starts):]
+    source = re.split(r"\n#{2,}\s", source, maxsplit=1)[0].strip()
+    return source
 
 def main(design_md: str, mod_cs: str, assembly_name: str = "LiveStudioMod") -> dict:
     build_id = f"dify-{time.strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:8]}"
     clean_name = _clean_assembly_name(assembly_name)
-    design = (design_md or "").strip()
+    design = _extract_design_md(design_md)
     source = _extract_mod_cs(mod_cs)
 
     return {

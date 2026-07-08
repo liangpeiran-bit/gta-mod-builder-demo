@@ -48,6 +48,16 @@ Do not write prompts that tell Dify to "look at" local repository paths. Those p
 
 ## Node Contracts
 
+## DeepSeek Model Assignment
+
+Use the smallest model that can reliably satisfy each node contract:
+
+- `Multilingual Intake`: `deepseek-v4-flash`, low-cost request parsing.
+- `LIVE Studio Scope Gate`: `deepseek-v4-flash`, deterministic classification.
+- `DESIGN.md Generator`: `deepseek-v4-pro`, higher quality planning and edge-case coverage.
+- `Mod.cs Generator`: `deepseek-coder`, C# code generation with strict template constraints.
+- `QA Fixer`: `deepseek-coder`, low temperature. Avoid `deepseek-reasoner` here because this node feeds source code directly to the compiler and reasoning traces such as `<think>` must not enter `Mod.cs`.
+
 ### Multilingual Intake
 
 Purpose:
