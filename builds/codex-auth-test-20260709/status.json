@@ -1,0 +1,12 @@
+{
+  "build_id": "codex-auth-test-20260709",
+  "status": "success",
+  "message": "Build succeeded.",
+  "file_name": "Mod.cs",
+  "assembly_name": "AuthTest",
+  "download_url": "builds/codex-auth-test-20260709/AuthTest.zip",
+  "created_at": "2026-07-09T15:23:47.2172063Z",
+  "build_log": "  Determining projects to restore...\r\n  Restored D:\\a\\gta-mod-builder-demo\\gta-mod-builder-demo\\work\\live-studio\\ModProject\\ModProject.csproj (in 7.51 sec).\r\n  ModProject -> D:\\a\\gta-mod-builder-demo\\gta-mod-builder-demo\\work\\live-studio\\dist\\AuthTest.dll\r\n\r\nBuild succeeded.\r\n    0 Warning(s)\r\n    0 Error(s)\r\n\r\nTime Elapsed 00:00:54.23\r\n\r\nBuild succeeded. Output:\r\n- D:\\a\\gta-mod-builder-demo\\gta-mod-builder-demo\\work\\live-studio\\dist\\AuthTest.dll\r\n",
+  "design_md": "# test",
+  "mod_cs": "using System; public class X {}"
+}
