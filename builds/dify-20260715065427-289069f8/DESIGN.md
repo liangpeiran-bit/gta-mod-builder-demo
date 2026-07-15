@@ -1,0 +1,349 @@
+<think>
+Let me analyze this design request carefully. It's a "Fragile Cargo Delivery" gameplay mode for GTA5 with LIVE Studio integration. Let me identify all the capabilities needed:
+
+1. Vehicle spawning (mission vehicle)
+2. Vehicle health/damage management (repair 25%, tire burst, engine stall, nearby explosion with minimum health)
+3. Tire burst and bulletproof tires
+4. Vehicle handling (reduce grip)
+5. Speed boost
+6. NPC spawning (escort NPCs, pursuit vehicles)
+7. Timer system (10 minutes)
+8. Waypoint/checkpoint system
+9. Vehicle change detection
+10. Vehicle explosion detection
+11. Vehicle engine control
+12. Nearby explosion effect
+13. Force reroute checkpoint
+14. Clear pursuers
+15. Comment/chat trigger system (LIVE Studio events)
+
+Let me first query SHVDN API for the core capabilities. I'll split into two batches:
+
+Batch 1: Core vehicle capabilities (spawn, health, repair, explosion, tires, engine)
+Batch 2: NPC spawning, waypoints, speed boost, grip handling, timer
+
+Let me start with batch 1.
+
+For gifts, the user didn't specify any gifts, so gift_requirements will be not_required.
+
+Let me query SHVDN first.
+</think>
+<think>
+Let me analyze the results:
+
+From batch 1:
+- `GTA.Vehicle.Repair()` - confirmed, repairs vehicle
+- Many capabilities not found: tire burst, engine stall, bulletproof tires, speed boost, grip handling, etc.
+
+From batch 2:
+- `GTA.World.CreateVehicle()` - confirmed
+- `GTA.Vehicle.Explode()` - confirmed
+- `GTA.Native.Hash.CREATE_VEHICLE` - native hash
+
+I need to check more capabilities. Let me think about what I still need:
+
+For tire burst: I should look for `BurstTire` or `Wheel` related APIs
+For engine: `EngineRunning`, `EngineHealth`, etc.
+For bulletproof tires: Some native or property
+For speed boost: `Speed` property on Vehicle, or `ApplyForce`
+For grip: `Traction`, `Handling`
+For blip/waypoint: `Blip`, `Waypoint`
+For timer: This is C# level (System.Timers or similar), not SHVDN
+For NPC/ped: `World.CreatePed`, `Ped`
+For vehicle health: `Health`, `EngineHealth`
+For nearby explosion: `World.AddExplosion`
+
+I've used both my SHVDN calls. Now I should proceed with DESIGN.md since I've hit the max of 2 calls. Let me also check for gifts - the user did not mention gifts, so gift_requirements = not_required.
+
+Now let me compile all the information and write the DESIGN.md. I have confirmed:
+- `Vehicle.Repair()` - repairs vehicle fully
+- `World.CreateVehicle()` - spawns vehicles
+- `Vehicle.Explode()` - makes vehicle explode
+
+For things I couldn't confirm, I need to mark them as `needs_query` and provide fallbacks. Let me think about what common SHVDN APIs are available:
+
+Common SHVDN APIs I know exist but need to be confirmed:
+- `Vehicle.Health` property
+- `Vehicle.EngineHealth` property
+- `Vehicle.IsEngineRunning` property
+- `Vehicle.Wheels` collection, `Wheel.Burst()`
+- `Vehicle.Speed` property
+- `Vehicle.ApplyForce()` or similar
+- `Ped` class, `World.CreatePed()`
+- `Blip` class for waypoints
+- `World.AddExplosion()`
+- `Vehicle.IsExploded` or `Vehicle.IsDead`
+- `Game.Player`, `Game.Player.Character`
+- `Game.Player.Character.CurrentVehicle`
+- `Vehicle.Handling` for grip/traction modifications
+
+Since I've exhausted my SHVDN queries, I need to mark these as `needs_query` and provide reasonable fallbacks.
+
+For the timer, it's standard C# `System.Timers.Timer` or `DateTime`/`TimeSpan`, not a SHVDN API.
+
+For LIVE Studio events, comments/chat triggers are part of LIVE Studio template (OnCommentReceived or similar).
+
+Let me now write the complete DESIGN.md.
+
+Key design decisions:
+1. Vehicle: Spawn a mission vehicle (could use a specific model or the player's current vehicle)
+2. Timer: 10 minutes countdown, C# timer
+3. State machine: Idle -> Active -> Success/Failed
+4. Positive effects: repair 25%, bulletproof tires 30s, clear pursuers, speed boost 5s, spawn escort NPC
+5. Negative effects: tire burst, engine stall, spawn pursuit vehicles, reduce grip, nearby explosion (with health floor), force reroute checkpoint
+
+For "repair 25%": Vehicle.Repair() fully repairs. We'd need to read Health, calculate 25%, and set it. Vehicle.Health property needed.
+
+For "bulletproof tires 30s": Need native to set tire invincibility or Wheel.CanBurst = false. Fallback: Use Vehicle.CanTiresBurst or similar.
+
+For "tire burst": Wheel.Burst() or native.
+
+For "engine stall": Vehicle.EngineRunning = false, or EngineHealth = 0 temporarily.
+
+For "speed boost": Vehicle.Speed modification or ApplyForce.
+
+For "reduce grip": Vehicle.Handling or native traction control.
+
+For "nearby explosion": World.AddExplosion() near vehicle, but preserve minimum health.
+
+For "force reroute checkpoint": Change waypoint Blip position.
+
+Let me now write the DESIGN.md.
+</think>Now I have SHVDN results. Let me analyze and compile the DESIGN.md. The user didn't mention any gifts, so `gift_requirements` = `not_required`.
+
+Key confirmed APIs: `Vehicle.Repair()`, `World.CreateVehicle()`, `Vehicle.Explode()`. Many capabilities need marking as `needs_query` with fallback strategies.
+
+# DESIGN.md
+
+## 需求摘要
+
+| 字段 | 内容 |
+|------|------|
+| 玩法名称 | 易碎货物送达 |
+| 核心目标 | 主播驾驶指定任务车辆，在 10 分钟内将"货物"送达终点标记点 |
+| 胜利条件 | 任务车辆在 10 分钟倒计时归零前抵达终点触发区域 |
+| 失败条件 | ① 任务车辆爆炸/毁坏 ② 主播离开任务车辆（换乘其他车辆或步行超过宽限期） ③ 10 分钟倒计时归零 |
+| 时长/节奏 | 单局 10 分钟倒计时，一次性任务 |
+| 观众互动 | 通过 LIVE Studio 聊天指令触发正/负面效果（礼物触发可选，当前未指定礼物映射） |
+
+---
+
+## 玩法流程
+
+```
+[开始] → 主播触发开始指令 → 生成任务车辆 + 终点标记 + 10分钟倒计时
+   ↓
+[进行中] → 主播驾驶前往终点，观众实时发送正/负面互动指令
+   ↓
+[判定] → 抵达终点 → [胜利]
+       → 车辆爆炸/毁坏 → [失败]
+       → 主播换车超5秒 → [失败]
+       → 倒计时归零 → [失败]
+   ↓
+[结束] → 清理所有任务实体、Blip、计时器，重置状态
+```
+
+---
+
+## 状态机
+
+| 状态 | 说明 | 可触发的转换 |
+|------|------|-------------|
+| `Idle` | 脚本已加载，等待开始指令 | 主播发送 `!start` 或等效指令 → `Active` |
+| `Active` | 任务进行中，倒计时运行，观众互动开放 | 抵达终点 → `Success`；车辆爆炸/毁坏 → `Failed`；换车超时 → `Failed`；倒计时归零 → `Failed` |
+| `Success` | 胜利，展示结算，禁止新互动 | 自动或手动重置 → `Idle` |
+| `Failed` | 失败，展示失败原因，禁止新互动 | 自动或手动重置 → `Idle` |
+
+---
+
+## 触发条件
+
+### 主播指令
+
+| 指令 | 状态要求 | 效果 |
+|------|---------|------|
+| `!start` 或 `!fragile` | `Idle` | 开始任务：在主播当前位置生成任务车辆，在地图远端随机选点生成终点 Blip，启动 10 分钟倒计时 |
+| `!reset` 或 `!cancel` | `Active` / `Success` / `Failed` | 强制结束当前任务，清理所有实体与计时器，回到 `Idle` |
+
+### 观众正面互动指令（`Active` 状态可用）
+
+| 指令 | 冷却 | 效果 |
+|------|------|------|
+| `!repair` | 30 秒（全局） | 修复任务车辆 25% 耐久 |
+| `!armor` 或 `!bulletproof` | 60 秒（全局） | 任务车辆轮胎防爆，持续 30 秒 |
+| `!clear` | 45 秒（全局） | 清空所有追击 NPC 车辆（删除实体） |
+| `!boost` | 30 秒（全局） | 任务车辆获得短暂加速（设置速度倍率或施加力，持续 5 秒） |
+| `!escort` | 90 秒（全局） | 在任务车辆附近生成 1 辆护航 NPC 警车/武装车，跟随并攻击追击者，持续存在直到被毁或任务结束 |
+
+### 观众负面互动指令（`Active` 状态可用）
+
+| 指令 | 冷却 | 效果 |
+|------|------|------|
+| `!tire` 或 `!pop` | 20 秒（全局） | 随机爆掉任务车辆 1 个轮胎 |
+| `!stall` | 45 秒（全局） | 任务车辆引擎熄火（EngineRunning = false / EngineHealth → 0），持续 3 秒后自动恢复 |
+| `!chase` | 60 秒（全局） | 在任务车辆后方 200m 生成 2 辆追击敌对车辆，AI 驾驶并攻击主播 |
+| `!slide` 或 `!ice` | 40 秒（全局） | 降低任务车辆抓地力/牵引力，持续 10 秒 |
+| `!boom` | 50 秒（全局） | 在任务车辆附近（5-15m 随机偏移）产生一次爆炸，但保证车辆血量不低于 15%，主播不会被击杀 |
+| `!detour` | 120 秒（全局） | 将终点 Blip 移动到当前终点的反方向 800m 处，强制绕路 |
+
+### 冷却机制
+
+- 每个指令独立全局冷却计时（冷却时间见上表），冷却期间忽略同类指令。
+- 冷却由 `DateTime` + `TimeSpan` 在脚本中管理（纯 C# 逻辑，不依赖 SHVDN API）。
+- 冷却到期后，下一条该指令立即生效。
+
+---
+
+## 效果表
+
+### 正面效果实现细节
+
+| 效果 | 实现方式 | 参数 |
+|------|---------|------|
+| 修复 25% | 读取 Vehicle.Health，计算 `min(MaxHealth, current + 25% * MaxHealth)`，写入 Vehicle.Health | 25% 最大血量 |
+| 防爆轮胎 30s | 对任务车辆设置轮胎免爆标志（如 Wheel.CanBurst = false 或等效 Native），30 秒后恢复 | 持续 30 秒 |
+| 清空追兵 | 遍历脚本维护的追击车辆列表，逐一 Delete()，清空列表 | 全部清除 |
+| 短暂加速 5s | 修改 Vehicle.Speed 或施加前向力，5 秒后恢复正常 | 加速倍率 1.5x 或等效 |
+| 生成护航 NPC | World.CreatePed() + 给 Ped 分配车辆，设置 RelationshipGroup 为友方，AI 任务设为跟随并攻击敌人 | 1 辆 + 1 名 NPC |
+
+### 负面效果实现细节
+
+| 效果 | 实现方式 | 参数 |
+|------|---------|------|
+| 爆胎 | 随机选取任务车辆的一个车轮，调用 Wheel.Burst() 或等效 Native | 1 个随机轮胎 |
+| 引擎熄火 | Vehicle.EngineRunning = false 或 EngineHealth → 0，启动 3 秒 Coroutine 后恢复 | 熄火 3 秒 |
+| 生成追击车辆 | World.CreateVehicle() 在主播后方生成敌对车辆，Ped 驾驶并设置 AI 攻击任务（Task.VehicleChase） | 2 辆，200m 后方 |
+| 降低抓地力 | 修改车辆 Handling 数据中的 Traction 值或等效 Native，10 秒后恢复原始值 | 降低至 0.3x 原始牵引力 |
+| 附近爆炸 | World.AddExplosion() 在 5-15m 随机偏移处引爆，爆炸前记录 Health，爆炸后若 Health < 15% MaxHealth 则恢复至 15% | 最小血量 15% |
+| 强制绕路 | 修改终点 Blip 的 Position 到新坐标（当前终点位置反方向 800m），更新导航 | 偏移 800m |
+
+### 统一约束
+
+- 所有正面/负面效果仅作用于**任务车辆**（由脚本记录引用），不影响场景中其他车辆。
+- 追击车辆由脚本维护 `List<Vehicle>`，便于清空和管理。
+- 任何效果的持续时间通过 `Coroutine` + `Yield` 或 `DateTime` 差值管理。
+
+---
+
+## capability_requirements
+
+| capability | behavior | priority | status | verified_evidence | fallback |
+|------------|----------|----------|--------|-------------------|----------|
+| `Vehicle.Repair()` | 完全修复车辆 | critical | **verified** | `GTA.Vehicle.Repair()` 方法确认存在 | 无需降级 |
+| `World.CreateVehicle()` | 生成任务车辆与追击车辆 | critical | **verified** | `GTA.World.CreateVehicle(GTA.Model, Vector3, float)` 确认存在 | 无需降级 |
+| `Vehicle.Explode()` | 检测车辆是否被引爆 | high | **verified** | `GTA.Vehicle.Explode()` 方法确认存在 | 也可用 `Vehicle.IsDead` / `Vehicle.Health <= 0` 检测 |
+| `Vehicle.Health` (get/set) | 读写车辆血量，实现 25% 修复与爆炸后保底 | critical | **needs_query** | SHVDN 未返回匹配，但为标准 SHVDN 属性 | 使用 Native `GET_ENTITY_HEALTH` / `SET_ENTITY_HEALTH` |
+| `Vehicle.MaxHealth` | 获取最大血量计算 25% | high | **needs_query** | 未确认 | 使用固定值估算（如 1000），或 Native `GET_ENTITY_MAX_HEALTH` |
+| `Vehicle.EngineHealth` (get/set) | 引擎熄火效果 | high | **needs_query** | 未返回匹配 | Native `SET_VEHICLE_ENGINE_HEALTH` |
+| `Vehicle.EngineRunning` (get/set) | 引擎开关控制 | high | **needs_query** | 未返回匹配 | Native `SET_VEHICLE_ENGINE_ON` |
+| `Vehicle.Wheels[]` + `Wheel.Burst()` | 爆胎效果 | high | **needs_query** | 未返回匹配 | Native `SET_VEHICLE_TYRE_BURST` |
+| `Wheel.CanBurst` 或等效 | 防爆轮胎 | high | **needs_query** | 未返回匹配 | Native `SET_VEHICLE_TYRES_CAN_BURST` |
+| `Vehicle.Speed` (get/set) | 读取/设置速度实现加速 | high | **needs_query** | 未返回匹配 | Native `SET_VEHICLE_FORWARD_SPEED` 或 `APPLY_FORCE_TO_ENTITY` |
+| `Vehicle.Handling` 或 Traction 相关 | 降低抓地力 | medium | **needs_query** | 未返回匹配 | Native `SET_VEHICLE_REDUCE_GRIP` 或修改 handling 浮点值 |
+| `World.AddExplosion()` | 附近爆炸效果 | high | **needs_query** | 未返回匹配 | Native `ADD_EXPLOSION` |
+| `World.CreatePed()` | 生成追击驾驶员与护航 NPC | critical | **needs_query** | 未返回匹配 | Native `CREATE_PED` |
+| `Ped.Task.VehicleChase` 或等效 AI | 追击 AI 行为 | high | **needs_query** | 未返回匹配 | Native `TASK_VEHICLE_CHASE` |
+| `Blip` 类（创建/移动/删除） | 终点标记与绕路 | critical | **needs_query** | 未返回匹配 | Native `ADD_BLIP_FOR_COORD` / `SET_BLIP_COORDS` |
+| `Vehicle.IsDead` 或 `Vehicle.IsAlive` | 检测车辆是否毁坏 | critical | **needs_query** | 未返回匹配 | `Vehicle.Health <= 0` 判断 |
+| `Game.Player.Character.CurrentVehicle` | 检测主播是否换车 | critical | **needs_query** | 未返回匹配 | Native `GET_VEHICLE_PED_IS_IN` |
+| `RelationshipGroup` | 友方/敌方关系设定 | medium | **needs_query** | 未返回匹配 | Native `SET_PED_AS_ENEMY` / `SET_RELATIONSHIP_BETWEEN_GROUPS` |
+| `Coroutine` / `Yield` (SHVDN Script) | 延时与持续效果管理 | critical | **needs_query** | SHVDN 脚本基类通常内置 | 使用 `Wait()` + `DateTime` 差值 |
+
+---
+
+## gift_requirements
+
+| 字段 | 值 |
+|------|-----|
+| original_query | 未指定（用户输入无礼物相关内容） |
+| keywords | 无 |
+| status | **not_required** |
+| confirmed_name | N/A |
+| gift_id | N/A |
+| diamondCount | N/A |
+| candidates | N/A |
+| fallback | 玩法完全基于聊天指令触发，无需礼物映射；后续如需礼物触发，可另行查询 `query_live_gifts` |
+
+---
+
+## LIVE Studio 事件与指令映射
+
+| LIVE Studio 事件 | 映射到 | 说明 |
+|-------------------|--------|------|
+| `OnCommentReceived` (或等效聊天事件) | 指令解析器 | 从评论中提取 `!repair`、`!tire` 等指令，匹配后执行对应效果 |
+| （可选）`OnGiftReceived` | 礼物→效果映射（预留） | 当前未配置礼物映射，后续可通过 `query_live_gifts` 补充 |
+| 脚本 `OnTick` | 计时器 + 车辆状态检测 | 每帧检查：倒计时是否归零、车辆是否存在/爆炸、主播是否换车、终点是否到达 |
+
+### 指令解析规则
+
+- 不区分大小写（`!REPAIR` = `!repair`）。
+- 忽略指令前后的多余空格。
+- 同一帧内同一指令多次出现仅处理一次。
+- 未识别的指令静默忽略。
+
+---
+
+## 计时与冷却
+
+| 元素 | 机制 | 说明 |
+|------|------|------|
+| 10 分钟任务倒计时 | `DateTime` 记录开始时间，每 Tick 计算剩余秒数 | 归零时触发 `Failed`，显示"超时" |
+| 指令冷却 | 每个指令独立 `Dictionary<string, DateTime>` 记录上次触发时间 | 冷却期内忽略同指令 |
+| 持续效果计时（防爆轮胎 30s、加速 5s、熄火 3s、抓地力 10s） | 效果触发时记录到期时间，Tick 中检查并恢复 | 到期自动恢复原始状态 |
+| 绕路冷却 120s | 指令冷却机制覆盖 | 防止频繁绕路 |
+
+---
+
+## 失败与清理
+
+### 失败检测（每 Tick）
+
+1. **车辆爆炸/毁坏**：`Vehicle.Health <= 0` 或 `Vehicle.IsDead` → 立即触发 `Failed`，原因="车辆被毁"。
+2. **主播换车**：`Game.Player.Character.CurrentVehicle != missionVehicle` → 启动 5 秒宽限计时器；若 5 秒内未回到任务车辆 → `Failed`，原因="货物遗弃"；回到则重置宽限。
+3. **超时**：倒计时 ≤ 0 → `Failed`，原因="超时"。
+
+### 胜利检测（每 Tick）
+
+- 任务车辆位置与终点 Blip 位置距离 ≤ 5m（抵达半径）→ `Success`。
+
+### 清理流程（`Failed` / `Success` / `!reset` 触发）
+
+1. 停止所有运行中的 Coroutine（持续效果）。
+2. 遍历并删除所有追击车辆实体。
+3. 删除护航 NPC 及其车辆。
+4. 删除终点 Blip。
+5. 删除任务车辆（可选：保留或标记为普通车辆）。
+6. 清空所有冷却记录与持续效果到期时间。
+7. 停止倒计时。
+8. 状态置为 `Idle`。
+
+### 脚本中止清理（`Script.Abort()` / 卸载）
+
+- `OnScriptAbort` 或等效生命周期事件中执行与清理流程相同的逻辑，确保不残留实体。
+
+---
+
+## 降级方案
+
+| 场景 | 降级策略 |
+|------|---------|
+| `needs_query` 能力在代码生成阶段仍未确认 | 优先使用 Native Hash 调用（`Function.Call(Hash.XXX, ...)`）作为 fallback；若 Native 也失败，该互动效果降级为"通知提示但无实际效果"，不影响核心任务流程 |
+| 追击车辆生成失败（坐标无效/模型加载失败） | 静默跳过本次追击生成，向观众反馈"追兵暂时无法派出" |
+| 终点坐标无法在地面找到安全点 | 使用 `World.GetSafeCoordForCoord()` 或回退到预设的固定终点列表 |
+| 任务车辆生成失败 | 使用主播当前车辆作为任务车辆，并提示"已标记当前车辆为货物车辆" |
+| 爆炸保底血量逻辑触发后车辆仍过低 | 直接调用 `Vehicle.Repair()` 恢复到满血，再扣至 15%（遵循"保留最低血量"意图） |
+
+---
+
+## 验收标准
+
+1. **基本流程**：主播发送开始指令后，屏幕上出现任务车辆、终点标记、10 分钟倒计时 UI；抵达终点触发胜利结算。
+2. **失败-爆炸**：任务车辆被炸毁时立即判定失败，显示失败原因。
+3. **失败-换车**：主播离开任务车辆超过 5 秒判定失败。
+4. **失败-超时**：10 分钟归零判定失败。
+5. **正面指令**：观众发送 `!repair` 后任务车辆血量上升约 25%；`!armor` 后 30 秒内轮胎不爆；`!clear` 后追击车辆消失；`!boost` 后车辆短暂提速；`!escort` 后出现友方车辆跟随。
+6. **负面指令**：观众发送 `!tire` 后随机轮胎爆掉；`!stall` 后引擎熄火 3 秒后恢复；`!chase` 后出现追击车辆；`!slide` 后车辆操控变滑 10 秒；`!boom` 后附近爆炸但不致死且车辆血量 ≥ 15%；`!detour` 后终点标记跳跃到新位置。
+7. **冷却**：同一指令在冷却期内重复发送无效。
+8. **清理**：任务结束（无论胜负）或 `!reset` 后，所有任务实体、Blip、计时器被清理，状态回到 `Idle`。
+9. **防刷**：同一帧内重复指令只处理一次；冷却期内指令静默忽略。
+10. **健壮性**：在 `Idle` 状态接收正面/负面指令时不报错，静默忽略。
