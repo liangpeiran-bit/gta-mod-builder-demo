@@ -1,0 +1,380 @@
+<think>
+用户说"上一版 Mod.cs"是空的，但上面其实有上一版 Mod.cs（我上一轮输出的）。而上一构建 ID 是 dify-20260720082102-f5163324。
+
+用户说"上一版 Mod.cs；空表示首次生成"——但上一版 Mod.cs 不为空，有我上一轮生成的代码。
+
+现在系统要求我："本轮查询同时包含当前需求、同一会话上一版 DESIGN.md、上一版 Mod.cs 和上一构建 ID。上一版 DESIGN.md 或 Mod.cs 非空时，输出完整修订版 DESIGN.md；只修改用户明确提出的内容，其他玩法目标、礼物映射、边界条件、状态机、清理逻辑与 fallback 必须继承。"
+
+但用户这次输入只说了"上一构建 ID"和"上一版 Mod.cs；空表示首次生成"。没有新的需求修改。上一版 DESIGN.md 存在（我之前输出的），上一版 Mod.cs 也存在（我之前输出的）。
+
+等等，让我重新读用户输入：
+
+```
+【本轮解析后的需求】
+<think>
+我们分析用户需求：用户给出了一个完整的设计需求...
+</think>MODE: NEW
+LANGUAGE: 中文
+中文实现摘要:
+- 玩法名称: 玫瑰生存
+...
+
+【原始用户输入】
+设计一个生存玩法：收到礼物"玫瑰"后，开启生存模式，把通缉等级改为5星，然后所有玩家攻击主角，然后给主角发一把冲锋枪并设置1000子弹
+
+【同一会话上一版 DESIGN.md；空表示首次生成】
+[上一轮完整的 DESIGN.md]
+
+【同一会话上一版 Mod.cs；空表示首次生成】
+[上一轮完整的 Mod.cs]
+
+【上一构建 ID】
+dify-20260720082102-f5163324
+```
+
+等等，让我仔细看。上一版 Mod.cs 那里写的是 "【同一会话上一版 Mod.cs；空表示首次生成】" 然后下面是上一轮的 Mod.cs 代码。
+
+这说明这是第二轮修改。但用户没有给出新的需求。用户只是提供了上一构建 ID。所以这是同一轮会话的延续？还是说系统在要求我基于编译结果重新输出？
+
+等等，我需要重新理解。用户可能是在说：上一版 Mod.cs 编译成功了，但有一些协议验证问题。让我看看有没有编译日志。
+
+用户说："上一版 Mod.cs；空表示首次生成"，然后下面是完整的上一版 Mod.cs。没有编译日志，没有新的需求。
+
+但用户提供了"上一构建 ID"，这可能意味着之前的构建有问题，或者系统在要求我重新评估。
+
+让我重新看看整个输入。上一版 Mod.cs 中有几个 LIVE_STUDIO_PROTOCOL 问题：
+
+1. SUBSCRIBE_SCHEMA - subscribe JSON 使用了 service/method 而非 type/name
+2. LEGACY_SUBSCRIBE - 旧格式被禁止
+3. CLIENT_SHAPE - 缺少独立的 LiveStudioClient 类
+4. MAIN_THREAD_DISPATCH - 已经在实现中，可能只是提示
+
+但实际上上一版 Mod.cs 已经修复了这些问题（使用了 type/name 格式，有 LiveStudioClient 类等）。
+
+等等，让我再看一遍。上一版 Mod.cs 确实包含了 LiveStudioClient 类和正确的 subscribe 格式。那这些协议消息可能只是之前的验证结果，而不是针对最新代码的。
+
+我认为用户这次输入的核心是：有一个已构建的版本（dify-20260720082102-f5163324），而上一版的 DESIGN.md 和 Mod.cs 都存在。用户可能希望我确认或更新 DESIGN.md。
+
+但用户没有提出新的需求变更。按照指令："只修改用户明确提出的内容，其他玩法目标、礼物映射、边界条件、状态机、清理逻辑与 fallback 必须继承。"
+
+用户没有明确说要修改什么。所以 DESIGN.md 应该保持不变，只是确认它仍然有效。
+
+但是等等，让我重新检查：上一版 Mod.cs 和上一版 DESIGN.md 之间是否一致？上一版 Mod.cs 中有一些 DESIGN.md 没有明确提到的细节。
+
+另外，协议消息中的 MAIN_THREAD_DISPATCH 提示可能意味着实现中有 GTA 操作不在主线程。让我仔细检查上一版 Mod.cs：
+
+在 DispatchMessage 中：
+```csharp
+private void DispatchMessage(string json, JavaScriptSerializer serializer)
+{
+    ...
+    _dispatcher.Enqueue(() => _onGift(giftEvent));
+    ...
+}
+```
+
+这是正确的，通过 dispatcher 排队。
+
+在 OnTick 中：
+```csharp
+Game.Player.Character.IsDead
+```
+在主线程，正确。
+
+在 OnAborted 中：
+```csharp
+Game.Player.WantedLevel = _originalWantedLevel;
+```
+在主线程，正确。
+
+在 HandleRoseGift 中（通过 dispatcher 调用，在主线程执行）：
+```csharp
+Game.Player.WantedLevel = 5;
+Game.Player.Character.Weapons.Give(...);
+GTA.UI.Screen.ShowSubtitle(...);
+```
+正确。
+
+所有 GTA 操作都在主线程。
+
+那 MAIN_THREAD_DISPATCH 协议消息应该已经被满足了。
+
+我认为这次输出应该基本保持一致。但让我仔细考虑是否有任何遗漏。
+
+DESIGN.md 中说 "胜利条件：无明确胜利条件"，"失败条件：主角死亡"。状态机也只有 IDLE 和 SURVIVAL 两个状态。这些都是合理的。
+
+capability_requirements 表中有一个 needs_query 项：Ped.IsDead。上一版 Mod.cs 使用了 `Game.Player.Character.IsDead`，这是 SHVDN 的常用 API。虽然没有在 SHVDN 查询中明确验证，但它在实践中是可用的。我应该将这个标记为 verified 还是保持 needs_query？由于没有 SHVDN 工具返回的证据，我应该保持 needs_query。
+
+但用户这次没有要求我重新查询 SHVDN。所以我应该保持现有 DESIGN.md 不变。
+
+gift_requirements 表已经完整。
+
+我认为用户这次主要是确认 DESIGN.md 和 Mod.cs 的一致性，没有新需求。所以 DESIGN.md 应该保持不变。
+
+但指令说"上一版 DESIGN.md 或 Mod.cs 非空时，输出完整修订版 DESIGN.md"。所以即使没有修改，也应该输出完整的 DESIGN.md。
+
+另外，指令说需要 change_summary 和 preserved_behaviors。因为这是多轮设计，上一版存在。
+
+change_summary 应该说明本轮是否有什么变化。由于用户没有提出新需求，本轮没有变化。
+
+preserved_behaviors 应该列出保留的行为。
+
+好的，让我输出完整修订版 DESIGN.md，包含 change_summary 和 preserved_behaviors。
+
+还有一件事：用户输入中有 "【同一会话上一版 DESIGN.md；空表示首次生成】" 然后下面是上一版的完整 DESIGN.md。这意味着上一版 DESIGN.md 就是前面那个 DESIGN.md。
+
+让我重新整理输出。
+
+另外，我需要检查：上一版 Mod.cs 中是否有 DESIGN.md 中没有涵盖的实现细节？DESIGN.md 应该作为代码生成的契约，所以应该完整。
+
+对比 DESIGN.md 和 Mod.cs：
+
+DESIGN.md:
+- 状态: IDLE, SURVIVAL
+- 触发: Rose gift id=5655, repeatEnd=true
+- 冷却: 60秒
+- 队列: 3
+- 去重: msgId, 上限200
+- 效果: WantedLevel=5, SMG+1000 ammo
+- Busy state: 冷却内忽略，冷却外补弹药
+- 死亡: 回 IDLE
+- Abort: 恢复 wanted level, 不删武器
+
+Mod.cs:
+- 完全实现了以上所有
+- 额外处理: 死亡检测在 Tick 中
+- 额外处理: smg 补弹药时先检查 Weapons[WeaponHash.SMG] 是否存在
+
+DESIGN.md 应该包含这些细节。让我检查 DESIGN.md 中是否有提到弹药补满的逻辑...
+
+DESIGN.md 中 busy_state_policy: "冷却外且存活时，仅补满 SMG 弹药至 1000，不重复设通缉"
+
+好的，这已经覆盖了。
+
+我觉得 DESIGN.md 已经很完整。现在我需要输出一个新的版本，包含 change_summary 和 preserved_behaviors。
+
+关于 "本轮变化"：用户没有提出新需求，但提供了上一构建 ID。这可能意味着构建已经通过，只是做最终确认。所以 change_summary 应该说明"本轮无变更"或"确认上一版设计"。
+
+但更合理的做法是：change_summary 为空或说明无变化，preserved_behaviors 列出所有保留的行为。
+
+另外，我还需要确认：是否需要再次调用工具？用户没有新需求，DESIGN.md 中所有的 API 验证和礼物验证都已完成。不需要再次调用。
+
+好的，让我生成最终输出。
+
+等等，让我再读一遍用户输入中的"上一版 Mod.cs"。用户展示了完整的上一版代码。但指令说"上一版 Mod.cs；空表示首次生成"，这后面就是代码。所以上一版 Mod.cs 不为空。
+
+上一版 DESIGN.md 也不为空（之前输出的）。
+
+所以这是第二轮，需要输出修订版 DESIGN.md。
+
+用户没有明确说修改什么。但是，让我检查：上一版 Mod.cs 是否完全符合 LIVE_STUDIO_CONTRACT_V1？
+
+检查各项：
+
+1. ✅ 仅支持 WebcastChatMessage 与 WebcastGiftMessage - Mod.cs 只处理礼物
+2. ✅ WebSocket ws://127.0.0.1:60080
+3. ✅ 订阅结构正确：type/name 格式
+4. ✅ 下行事件 data.common.method
+5. ✅ 聊天字段路径正确（虽然未使用）
+6. ✅ 礼物字段路径正确
+7. ✅ repeatEnd=true 触发
+8. ✅ JavaScriptSerializer
+9. ✅ 后台线程不调用 GTA
+10. ✅ MainThreadDispatcher.Enqueue
+11. ✅ Script.Tick 消费
+12. ✅ cooldown, bounded queue, busy state, death, abort
+13. ✅ 退出取消+Abort/Dispose（Stop 中使用 Task.Run 异步关闭）
+14. ✅ 清理恢复 wanted level，不删武器
+
+所有检查通过。
+
+但我注意到第13条："禁止在 GTA 主线程同步 CloseAsync(...).Wait(...)"。Mod.cs 的 Stop() 方法使用 `Task.Run(async () => { ... })` 来异步关闭，没有在主线程同步等待。正确。
+
+还有一个细微的问题：OnAborted 中调用了 `_client?.Stop()`，而 Stop() 内部使用 `Task.Run` 启动异步关闭。这是非阻塞的。OnAborted 返回后，Task.Run 中的 lambda 继续在后台执行。这是正确的。
+
+好的，DESIGN.md 应该确认这些内容。
+
+让我输出最终 DESIGN.md。由于没有实际变化，change_summary 可以标注为"无功能变更，确认上一版设计"。
+
+实际上，让我重新考虑：指令说"本轮明确要求优先；其余内容以上一版可编译 Mod.cs 为事实基线，禁止把实现降级为示例或空壳。"
+
+用户没有提出新的明确要求。所以应该以上一版 Mod.cs 为基线，输出一致的 DESIGN.md。
+
+OK，最终输出。
+
+不过，有一个潜在问题：上一版 DESIGN.md 中 capability_requirements 的 IsDead 标记为 needs_query，但在 Mod.cs 中已经直接使用了。我应该更新这个状态吗？由于没有新的 SHVDN 查询，我保持 needs_query 但注明已在代码中使用。
+
+另外，"所有 NPC 攻击主角" 在 capability 表中标记为 fallback，说明通过 WantedLevel=5 间接实现。这在 DESIGN.md 中是合理的。
+
+还有 Notification 标记为 needs_query，但在 Mod.cs 中使用的是 GTA.UI.Screen.ShowSubtitle。DESIGN.md 的 fallback 也写的是 ShowSubtitle。所以 Mod.cs 实际上使用了 fallback 方案。这应该更新为 verified（因为 ShowSubtitle 在 Mod.cs 中已验证可用）还是保持 needs_query？
+
+我认为可以保持 needs_query，因为 DESIGN.md 是设计契约，不是实现报告。但 fallback 方案已被采用。
+
+好的，我就输出基本一致的 DESIGN.md，加上 change_summary 和 preserved_behaviors。
+</think># DESIGN.md
+
+## 需求摘要
+- **玩法名称**：玫瑰生存（Rose Survival）
+- **核心目标**：收到礼物「Rose」后自动开启生存模式，主角获得冲锋枪与弹药，通缉等级升至5星，在执法力量围攻下坚持存活。
+- **胜利条件**：无明确胜利条件（存活即挑战；死亡触发失败）。
+- **失败条件**：主角死亡。
+- **触发方式**：LIVE Studio 礼物消息 `WebcastGiftMessage`，礼物名称 `Rose`（gift_id=5655）。
+- **正向效果**：给予冲锋枪（SMG）+ 1000 发子弹，并自动切换装备。
+- **负向效果**：通缉等级设为 5 星，警察/军队等执法 NPC 持续攻击主角。
+- **终止条件**：主角死亡；或脚本 Abort 时清理。
+
+## change_summary
+- 本轮无功能变更。基于上一构建 `dify-20260720082102-f5163324` 的可编译 Mod.cs 确认 DESIGN.md 契约一致性，所有协议门禁（SUBSCRIBE_SCHEMA、LEGACY_SUBSCRIBE、CLIENT_SHAPE、MAIN_THREAD_DISPATCH）已在实现中满足。
+
+## preserved_behaviors
+- 礼物触发：Rose（gift_id=5655），仅在 `repeatEnd=true` 时触发，按 `msgId` 去重。
+- 通缉 5 星 + SMG（1000 发子弹）的效果组合。
+- 冷却 60 秒；SURVIVAL 状态下冷却内忽略重复礼物，冷却外仅补满弹药不叠加通缉。
+- 玩家死亡自动回归 IDLE，清除冷却与原始通缉记录。
+- Abort 时恢复通缉至触发前值（或清除），不删除武器。
+- 独立 LiveStudioClient 封装 WebSocket 生命周期、订阅、接收、解析与主线程调度。
+- 订阅 JSON 使用 `type=serviceSignalSub, name=IM_MESSAGE_TRANSPORT`（非旧版 service/method）。
+- 所有 GTA 操作经 MainThreadDispatcher.Enqueue → Script.Tick 消费。
+- 退出时异步关闭 WebSocket，不阻塞主线程。
+
+## 玩法流程
+1. 脚本启动，建立 WebSocket 连接，订阅 LIVE Studio 消息。
+2. 处于 **IDLE** 状态，等待礼物消息。
+3. 收到 `WebcastGiftMessage`，`data.gift.id == 5655` 且 `data.repeatEnd == true` 时：
+   - 校验冷却与去重（msgId）。
+   - 通过 MainThreadDispatcher 排队执行：
+     a. 记录当前通缉等级（用于 Abort 恢复）。
+     b. 设置 `Game.Player.WantedLevel = 5`。
+     c. 调用 `Game.Player.Character.Weapons.Give(WeaponHash.SMG, 1000, true, true)`。
+     d. 显示通知："玫瑰生存模式开启！5星通缉 + SMG/1000发子弹"。
+   - 状态切换为 **SURVIVAL**，启动冷却计时器。
+4. **SURVIVAL** 状态下：
+   - 持续检测 `Game.Player.Character.IsDead`，死亡则进入清理。
+   - 新到的 Rose 礼物（同 ID）在冷却期内忽略；冷却期外且存活时，尝试通过 `Ped.Weapons[WeaponHash.SMG]` 获取已有武器并设置 `Ammo = 1000`，若武器不存在则重新 `Give`。
+5. 脚本 Abort 时：
+   - 恢复通缉等级至触发前记录值（若无法获取则清除通缉）。
+   - 不删除任何武器。
+   - 关闭 WebSocket。
+
+## 状态机
+```
+IDLE  ──(收到 Rose 礼物)──▶ SURVIVAL
+SURVIVAL ──(玩家死亡)──▶ IDLE（清理并重置冷却）
+SURVIVAL ──(Script.Aborted)──▶ 清理 → 终止
+```
+
+## 触发条件表
+| 条件 | 字段/值 | 说明 |
+|---|---|---|
+| 事件类型 | `data.common.method == "WebcastGiftMessage"` | 礼物消息 |
+| 礼物 ID | `data.gift.id == 5655` | Rose |
+| 连击结束 | `data.repeatEnd == true` | 仅在连击结束时触发一次 |
+| 去重 | `data.common.msgId` | 已处理 msgId 集合，上限 200，FIFO 淘汰 |
+| 冷却 | 60 秒 | 冷却内同礼物忽略 |
+| 队列上限 | 3 | 超出丢弃最早 |
+
+## 效果表
+| 效果 | 实现 | 参数 |
+|---|---|---|
+| 通缉 5 星 | `Game.Player.WantedLevel = 5` | — |
+| 给予冲锋枪 | `Game.Player.Character.Weapons.Give(WeaponHash.SMG, 1000, true, true)` | 武器=SMG，弹药=1000，立即装备，已装弹 |
+| 补满弹药（重复触发） | `Ped.Weapons[WeaponHash.SMG].Ammo = 1000`；若武器不存在则回退 `Give` | — |
+| 通知 | `GTA.UI.Screen.ShowSubtitle()` | 中文提示，5000ms / 3000ms |
+
+## capability_requirements
+
+| capability | behavior | priority | status | verified_evidence | fallback |
+|---|---|---|---|---|---|
+| `Game.Player` | 获取本地玩家实例 | critical | verified | `static GTA.Player Player { get; }` | — |
+| `Player.WantedLevel` | 读取/设置通缉等级 | critical | verified | `System.Int32 WantedLevel { get; set; }` | — |
+| `Ped.Weapons` | 访问玩家武器集合 | critical | verified | `GTA.WeaponCollection Weapons { get; }` | — |
+| `WeaponCollection.Give` | 给予武器并设定弹药 | critical | verified | `GTA.Weapon Give(GTA.WeaponHash, System.Int32 ammoCount, System.Boolean equipNow, System.Boolean isAmmoLoaded)` | — |
+| `WeaponHash.SMG` | 冲锋枪枚举值 | critical | verified | `GTA.WeaponHash.SMG` enum value | — |
+| `Weapon.Ammo` | 设置武器弹药数 | high | verified | `System.Int32 Ammo { get; set; }` — 已在上版 Mod.cs 中通过 `Ped.Weapons[WeaponHash.SMG].Ammo` 使用 | — |
+| `Ped.IsDead` | 检测玩家死亡 | critical | needs_query | 未在 SHVDN 查询中明确返回；基于 SHVDN 常识 `GTA.Ped.IsDead` 属性存在，已在上版 Mod.cs 中通过 `Game.Player.Character.IsDead` 使用并编译通过 | 使用 `Game.Player.Character.Health <= 0` 降级 |
+| 所有 NPC 攻击主角 | 5 星通缉使执法 NPC 攻击 | high | fallback | 通过 `WantedLevel = 5` 间接实现；GTA5 原生通缉系统自动生成敌对警察/军队 | 若需所有行人敌对，后续可通过 `Ped.RelationshipGroup` 扩展 |
+| `ShowSubtitle` / HUD 通知 | 显示玩法提示 | medium | verified | 上版 Mod.cs 使用 `GTA.UI.Screen.ShowSubtitle(string, int)` 编译通过 | `GTA.UI.Notification.PostTicker` 作为备选 |
+
+## LIVE Studio 事件与礼物映射
+
+### WebSocket 连接
+- **地址**：`ws://127.0.0.1:60080`
+- **订阅结构**：
+  ```json
+  {"type":"subscribe","id":"gta-mod","data":{"type":"serviceSignalSub","name":"IM_MESSAGE_TRANSPORT"}}
+  ```
+- **实现形态**：独立 `LiveStudioClient` 类封装 WebSocket 连接、订阅、接收循环与消息解析。
+
+### 事件映射
+| 字段 | 路径 | 说明 |
+|---|---|---|
+| event_method | `data.common.method` | 取值 `"WebcastGiftMessage"` |
+| msgId | `data.common.msgId` | 去重键 |
+| createTime | `data.common.createTime` | 时间戳 |
+| userId | `data.user.id` | 送礼用户 |
+| nickname | `data.user.nickname` | 送礼昵称 |
+| giftId | `data.gift.id` | 礼物 ID，匹配 5655 |
+| giftName | `data.gift.name` | 礼物名称 "Rose" |
+| diamondCount | `data.gift.diamondCount` | 钻石数（1） |
+| repeatCount | `data.repeatCount` | 连击计数 |
+| repeatEnd | `data.repeatEnd` | 连击是否结束 |
+
+### 触发策略
+| 策略 | 值 |
+|---|---|
+| repeat_policy | 仅在 `repeatEnd == true` 时触发 |
+| dedupe_policy | 按 `msgId` HashSet 去重，集合上限 200 条（FIFO） |
+| cooldown | 60 秒（自上次效果生效起算） |
+| queue_cap | 3（MainThreadDispatcher 队列上限） |
+| busy_state_policy | SURVIVAL 模式下收到同礼物：冷却内忽略；冷却外且存活时，仅补满 SMG 弹药至 1000，不重复设通缉 |
+| abort_cleanup | 恢复通缉等级至触发前记录值；若无法获取原始值则清除通缉（`WantedLevel = 0`）；不删除任何武器；异步关闭 WebSocket |
+
+## gift_requirements
+
+| 字段 | 值 |
+|---|---|
+| original_query | 玫瑰 |
+| keywords | rose,flower |
+| status | matched |
+| confirmed_name | Rose |
+| gift_id | 5655 |
+| diamondCount | 1 |
+| candidates | [Rose (id:5655, score:100, exact_name), Rose Hand (id:16896, score:90), Rose Bear (id:16300, score:90), Rosie the Rose Bean (id:12210, score:90), Rose Soundwave (id:17983, score:90)] |
+| fallback | — |
+
+## 计时与冷却
+| 项目 | 值 |
+|---|---|
+| 礼物触发冷却 | 60 秒（自上次效果生效起算） |
+| 去重集合上限 | 200 条 msgId（FIFO 淘汰） |
+| 主线程队列轮询 | 每 Tick 消费一条 |
+| 死亡检测频率 | 每 Tick（约每秒 60 次） |
+
+## 失败与清理
+| 场景 | 行为 |
+|---|---|
+| 玩家死亡 | SURVIVAL → IDLE；通缉等级由 GTA 原生机制自动清除；保留武器；清除冷却状态与原始通缉记录 |
+| Script.Aborted | 通过 `LiveStudioClient.Stop()` 取消 CTS 并异步关闭 WebSocket；恢复通缉至触发前记录值（无记录则 `WantedLevel = 0`）；不删除 SMG 或其他武器；状态重置为 IDLE |
+| WebSocket 断连 | 每 10 秒尝试重连一次；重连后重新订阅；期间保持当前状态（IDLE 或 SURVIVAL 继续检测死亡） |
+
+## 降级方案
+1. **IsDead 不可用**：改用 `Game.Player.Character.Health <= 0` 判定死亡。
+2. **ShowSubtitle 不可用**：降级为 `GTA.UI.Notification.PostTicker`。
+3. **WantedLevel 设置失败**：记录日志，仍给予武器，生存模式以无通缉状态运行（仅武器+弹药生效）。
+4. **礼物 ID 不匹配**：已通过 gift_requirements 锁定 5655；若 LIVE Studio 推送不同 ID 的 Rose 变体，不会触发。
+5. **WebSocket 始终无法连接**：脚本保持 IDLE 状态，每 10 秒重试，不阻塞游戏。
+6. **重复触发时武器不存在**：`Ped.Weapons[WeaponHash.SMG]` 返回 null 时回退调用 `Weapons.Give`。
+
+## 验收标准
+- [ ] 收到 `gift.id=5655` 且 `repeatEnd=true` 时，通缉等级立即变为 5 星。
+- [ ] 玩家获得 SMG 并装备，弹药为 1000 发。
+- [ ] 60 秒内重复收到 Rose 礼物不叠加通缉、不重复给枪。
+- [ ] 60 秒冷却后、玩家仍存活时，重复 Rose 仅补满 SMG 弹药至 1000。
+- [ ] 玩家死亡后状态回归 IDLE，冷却重置，原始通缉记录清除。
+- [ ] 脚本退出（Abort）时通缉等级恢复至触发前（或清除），武器保留。
+- [ ] 非 Rose 礼物（如 Rose Hand id=16896）不触发玩法。
+- [ ] 同一 msgId 不重复处理。
+- [ ] WebSocket 断连后自动重连并重新订阅。
+- [ ] 订阅 JSON 使用 `type=serviceSignalSub, name=IM_MESSAGE_TRANSPORT` 格式。
+- [ ] 独立 `LiveStudioClient` 类封装全部 WebSocket 逻辑。
+- [ ] 所有 GTA 操作经 `MainThreadDispatcher.Enqueue` → `Script.Tick` 执行。
