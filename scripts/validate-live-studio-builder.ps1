@@ -85,6 +85,7 @@ Assert-Contains ".github/workflows/build-mod.yml" "Message\|Text" "Workflow must
 Assert-Contains ".github/workflows/build-mod.yml" "\\.GiftId\\s\\*" "Workflow must normalize numeric GiftId comparisons to string comparisons."
 Assert-Contains ".github/workflows/build-mod.yml" "using GTA.Math;" "Workflow must add GTA.Math when generated code uses Vector3."
 Assert-Contains ".github/workflows/build-mod.yml" "Notification\\.Show" "Workflow must normalize unqualified Notification.Show calls."
+Assert-Contains ".github/workflows/build-mod.yml" "PROTOCOL_VALIDATION_FAILED" "Workflow must remove the deprecated full-Mod protocol sentinel before validating generated gameplay."
 Assert-NotContains ".github/workflows/build-mod.yml" "source_b64:" "Legacy single-file source_b64 input must be removed."
 Assert-NotContains ".github/workflows/build-mod.yml" "file_name:" "Legacy single-file file_name input must be removed."
 

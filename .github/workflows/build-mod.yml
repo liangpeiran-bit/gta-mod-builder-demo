@@ -73,6 +73,13 @@ jobs:
 
           $gameplayBytes = [System.Convert]::FromBase64String("${{ inputs.mod_cs_b64 }}")
           $gameplay = [System.Text.Encoding]::UTF8.GetString($gameplayBytes)
+          # Older Dify prompts could prepend a full-Mod protocol sentinel to otherwise valid
+          # GeneratedGameplay.cs. The fixed template owns that protocol now, so discard only
+          # this exact deprecated sentinel before enforcing the current gameplay boundary.
+          $gameplay = [regex]::Replace(
+            $gameplay,
+            '(?im)^\s*#error\s+PROTOCOL_VALIDATION_FAILED:[^\r\n]*(?:\r?\n)?',
+            '')
           $gameplay = [regex]::Replace($gameplay, '(?<![A-Za-z0-9_.])Screen\.ShowSubtitle', 'GTA.UI.Screen.ShowSubtitle')
           $gameplay = [regex]::Replace($gameplay, '(?<![A-Za-z0-9_.])Notification\.Show', 'GTA.UI.Notification.Show')
           $gameplay = $gameplay -replace 'GTA\.KeyEventArgs', 'KeyEventArgs'
