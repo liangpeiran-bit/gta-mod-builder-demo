@@ -14,7 +14,7 @@ on:
       template_contract_version:
         description: Fixed LIVE Studio template contract expected by Dify.
         required: false
-        default: live-studio-template-2
+        default: live-studio-template-3
         type: string
       design_md_b64:
         description: UTF-8 DESIGN.md content encoded as base64.

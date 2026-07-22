@@ -103,7 +103,7 @@ namespace ModProject.LiveStudio
                 {
                     _socket = new ClientWebSocket();
                     await _socket.ConnectAsync(Endpoint, token).ConfigureAwait(false);
-                    _onLog("LiveStudio: connected");
+                    _onLog("LiveStudio: socket connected; subscribing");
 
                     await SendTextAsync(SubscribeMessage, token).ConfigureAwait(false);
                     backoff = TimeSpan.FromSeconds(1);
@@ -187,7 +187,35 @@ namespace ModProject.LiveStudio
                 }
 
                 if (evt == null) continue;
-                if (!ShouldDeliverEvent(evt)) continue;
+
+                if (evt is SubscriptionEvent subscription)
+                {
+                    if (string.Equals(subscription.Status, "ok", StringComparison.OrdinalIgnoreCase))
+                    {
+                        _onLog("LiveStudio: subscription acknowledged - " + subscription.Name);
+                    }
+                    else
+                    {
+                        _onLog("LiveStudio: subscription failed - " + (subscription.Status ?? "unknown"));
+                    }
+                    continue;
+                }
+
+                if (!ShouldDeliverEvent(evt))
+                {
+                    _onLog("LiveStudio: duplicate event ignored - " + (evt.MsgId ?? "no msgId"));
+                    continue;
+                }
+
+                if (evt is GiftEvent receivedGift)
+                {
+                    _onLog(
+                        "LiveStudio: gift received - " +
+                        (receivedGift.GiftName ?? "gift") +
+                        " [" + (receivedGift.GiftId ?? "?") + "]" +
+                        " repeat=" + receivedGift.RepeatCount +
+                        " end=" + receivedGift.RepeatEnd);
+                }
 
                 try
                 {

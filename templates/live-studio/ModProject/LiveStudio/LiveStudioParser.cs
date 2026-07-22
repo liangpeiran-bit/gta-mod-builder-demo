@@ -30,6 +30,15 @@ namespace ModProject.LiveStudio
             if (body == null) return null;
 
             var common = GetDict(body, "common");
+            var envelopeType = GetString(root, "type");
+            if (common == null && string.Equals(envelopeType, "subscribeResult", StringComparison.Ordinal))
+            {
+                return new SubscriptionEvent(
+                    GetString(root, "id"),
+                    GetString(body, "status"),
+                    GetString(body, "name"));
+            }
+
             var method = GetString(common, "method");
             if (string.IsNullOrEmpty(method)) return null;
 

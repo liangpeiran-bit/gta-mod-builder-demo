@@ -26,26 +26,25 @@ namespace ModProject
 
             if (chat.Content.Trim().Equals("hello", StringComparison.OrdinalIgnoreCase))
             {
-                EnqueueWithCooldown(() =>
+                RunWithCooldown(() =>
                     GTA.UI.Notification.Show("~b~Hello from " + chat.Nickname));
             }
         }
 
         partial void OnGift(GiftEvent gift)
         {
-            if (gift.GiftId == "5655" && gift.RepeatEnd)
-            {
-                EnqueueWithCooldown(() =>
-                    GTA.UI.Notification.Show("~p~" + gift.Nickname + " sent Rose"));
-            }
+            TriggerGiftOnce(gift, "5655", matchedGift =>
+                RunWithCooldown(() =>
+                    GTA.UI.Notification.Show(
+                        "~p~" + matchedGift.Nickname + " sent Rose")));
         }
 
-        private void EnqueueWithCooldown(Action action)
+        private void RunWithCooldown(Action action)
         {
             var now = DateTime.UtcNow;
             if ((now - _lastAnyEffectAt).TotalSeconds < 3) return;
             _lastAnyEffectAt = now;
-            EnqueueGameplay(action);
+            action();
         }
     }
 }

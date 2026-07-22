@@ -10,7 +10,13 @@ namespace LiveStudioContractTests
 
         private static int Main()
         {
-            Check("subscribe-ack.json", evt => Assert(evt == null, "subscribe acknowledgement must be ignored"));
+            Check("subscribe-ack.json", evt =>
+            {
+                var subscription = evt as SubscriptionEvent;
+                Assert(subscription != null, "subscribe acknowledgement must parse as SubscriptionEvent");
+                Assert(subscription != null && subscription.Status == "ok", "subscription status must be preserved");
+                Assert(subscription != null && subscription.Name == "IM_MESSAGE_TRANSPORT", "subscription name must be preserved");
+            });
             Check("chat.json", evt =>
             {
                 var chat = evt as ChatEvent;

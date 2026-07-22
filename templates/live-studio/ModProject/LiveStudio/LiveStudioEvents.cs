@@ -61,4 +61,19 @@ namespace ModProject.LiveStudio
             ComboCount = comboCount;
         }
     }
+
+    public sealed class SubscriptionEvent : LiveStudioEvent
+    {
+        public string SubscriptionId { get; }
+        public string Status { get; }
+        public string Name { get; }
+
+        public SubscriptionEvent(string subscriptionId, string status, string name)
+            : base(null, 0L)
+        {
+            SubscriptionId = subscriptionId;
+            Status = status;
+            Name = name;
+        }
+    }
 }

@@ -23,4 +23,4 @@ The template also bundles SHVDN knowledge under `templates/live-studio/reference
 
 Dify cannot read repository paths automatically. Import the generated Markdown knowledge pack under `docs/dify-knowledge/shvdn/` into a Dify Knowledge Base, then connect that retrieval output to the gameplay generator and repair agent.
 
-The machine-readable `templates/live-studio/template-contract.json` versions the boundary. The generated gameplay contract exposes `ChatEvent.Content`, string `GiftEvent.GiftId`, normalized `GiftEvent.RepeatEnd`, and `EnqueueGameplay(...)`.
+The machine-readable `templates/live-studio/template-contract.json` versions the boundary. Template v3 dispatches every generated hook on the GTA main thread and exposes `TriggerGiftOnce(...)` / `TriggerGiftEveryEvent(...)` so gift matching, combo termination, terminal fallback, and diagnostics stay in fixed runtime code.

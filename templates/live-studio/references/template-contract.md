@@ -1,4 +1,4 @@
-# LIVE Studio Template Contract v2
+# LIVE Studio Template Contract v3
 
 This contract describes the only surface Dify-generated gameplay may use. The repository owns the WebSocket client, parser, event routing, dispatcher, Script lifecycle, and build project.
 
@@ -36,14 +36,22 @@ partial void OnChat(ChatEvent chat);
 partial void OnGift(GiftEvent gift);
 ```
 
-`OnGameplayTick` and `OnGameplayAborted` already run on the GTA main thread. `OnChat` and `OnGift` run on the LIVE Studio background thread, so GTA work from those handlers must be scheduled with:
+All generated hooks run on the GTA `Script.Tick` main thread. The fixed `Mod.cs` runtime receives LIVE Studio events on the WebSocket thread and performs the thread hop before calling `OnChat` or `OnGift`. Generated gameplay calls GTA and SHVDN APIs directly; it must not create another dispatcher, background task, thread, or timer.
+
+For one-shot gift effects, use the fixed helper:
 
 ```csharp
-EnqueueGameplay(() =>
+TriggerGiftOnce(gift, "5655", matchedGift =>
 {
-    // GTA world and UI work
+    // GTA world and UI work. This already runs on the main thread.
 });
 ```
+
+`TriggerGiftOnce` matches the gift id, waits for `RepeatEnd`, deduplicates a pending combo by viewer and gift, and executes after a 1200 ms quiet-period fallback if a LIVE Studio version omits the terminal event.
+
+Pass `"*"` as `expectedGiftId` only when `DESIGN.md` explicitly says any gift. The fixed runtime still keys pending combos by the actual received gift id.
+
+Use `TriggerGiftEveryEvent(gift, "5655", action)` only when `DESIGN.md` explicitly requires an effect for every combo event.
 
 `LogGameplay(string message)` is also available for diagnostic UI feedback.
 
@@ -53,7 +61,7 @@ EnqueueGameplay(() =>
 
 `GiftEvent` exposes `UserId`, `Nickname`, `GiftId`, `GiftName`, `DiamondCount`, `RepeatCount`, `RepeatEnd`, `ComboCount`, `MsgId`, and `CreateTime`.
 
-`GiftId` is a string. `RepeatEnd` is normalized by the fixed parser from `0/1`, booleans, or boolean strings. Compare gift ids as quoted strings, and require `RepeatEnd` for one-shot gift effects unless the design says otherwise.
+`GiftId` is a string. `RepeatEnd` is normalized by the fixed parser from `0/1`, booleans, or boolean strings. Generated code does not compare `GiftId` or inspect `RepeatEnd` directly; it chooses `TriggerGiftOnce` or `TriggerGiftEveryEvent` and passes the confirmed id as a quoted string.
 
 ## SHVDN Constraints
 
@@ -71,4 +79,6 @@ EnqueueGameplay(() =>
 - `ClientWebSocket`, `JavaScriptSerializer`, `Newtonsoft.Json`, or `System.Text.Json`
 - `ws://127.0.0.1:60080`, `serviceSignalSub`, or `IM_MESSAGE_TRANSPORT`
 - a `Mod` constructor, `class Mod : Script`, or `HandleEvent(...)`
+- `EnqueueGameplay(...)`, `Task.Run(...)`, custom threads, thread-pool work, or timers
+- direct `gift.GiftId` comparisons or direct `gift.RepeatEnd` checks
 - `chat.Message`, `chat.Text`, or integer comparisons such as `gift.GiftId == 5655`

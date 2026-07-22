@@ -98,23 +98,23 @@ When a viewer sends a combo of N gifts, LIVE Studio can emit N `GiftEvent`s. `Re
 
 Default behavior for most mods:
 
-- Fire simple one-shot effects only on `RepeatEnd` to avoid N repeated effects.
+- Use the fixed `TriggerGiftOnce` helper. It fires on `RepeatEnd` and has a 1200 ms quiet-period fallback when a LIVE Studio build omits the terminal event.
 - Fire progressive effects on every event only if the design explicitly asks for combo scaling.
 
 ## Threading
 
-WebSocket receive / parse / event callback run on a background thread. SHVDN game APIs must run on the Tick main thread.
+WebSocket receive and parsing run on a background thread. The fixed runtime queues parsed events and invokes all generated hooks on the Tick main thread.
 
 Correct pattern:
 
 ```csharp
-private void OnGift(GiftEvent gift)
+partial void OnGift(GiftEvent gift)
 {
-    MainThreadDispatcher.Enqueue(() =>
+    TriggerGiftOnce(gift, "5655", matchedGift =>
     {
-        GTA.UI.Notification.Show(gift.Nickname + " sent " + gift.GiftName);
+        GTA.UI.Notification.Show(matchedGift.Nickname + " sent " + matchedGift.GiftName);
     });
 }
 ```
 
-Do not call `World.*`, `Game.*`, `Game.Player.*`, `Notification.*`, or entity APIs directly from the WebSocket callback.
+Do not generate WebSocket callbacks, dispatchers, tasks, threads, or timers. Generated hooks already run on the GTA main thread.

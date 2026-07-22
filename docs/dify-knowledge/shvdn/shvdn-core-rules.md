@@ -6,8 +6,8 @@ Use these rules in `Mod.cs Generator` and `QA Fixer`.
 
 - Target ScriptHookVDotNet v3.
 - Target C# 7.3 and .NET Framework 4.8.
-- Generate only `ModProject/Mod.cs`; do not regenerate the fixed LIVE Studio template.
-- All GTA world changes from LIVE Studio callbacks must run through `MainThreadDispatcher.Enqueue(...)`.
+- Generate only `ModProject/GeneratedGameplay.cs`; do not regenerate the fixed LIVE Studio template.
+- The fixed template v3 dispatches all generated hooks on the GTA main thread. Call SHVDN APIs directly inside hooks; do not create dispatchers, tasks, threads, or timers.
 
 ## Known Compile Pitfalls
 

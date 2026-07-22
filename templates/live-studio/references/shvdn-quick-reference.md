@@ -75,7 +75,7 @@ World.AddExplosion(position, ExplosionType.Grenade, 1.0f, 0.0f);
 
 - Check `Game.Player.Character` before using it if the effect may run during death / loading / cutscene states.
 - Use cooldowns for audience-triggered effects.
-- Prefer `RepeatEnd` for gift combo effects unless the design asks for every gift tick to trigger.
+- Prefer fixed `TriggerGiftOnce(...)` handling unless the design explicitly asks for every gift event via `TriggerGiftEveryEvent(...)`.
 - Call `MarkAsNoLongerNeeded()` after using loaded models.
 - Avoid long blocking waits on Tick.
 - Do not read set-only vehicle multiplier properties. `Vehicle.EnginePowerMultiplier` and `Vehicle.EngineTorqueMultiplier` may be set; reset them to `1.0f` instead of reading original values.

@@ -119,7 +119,7 @@ Body:
     "assembly_name": "{{#code.assembly_name#}}",
     "design_md_b64": "{{#code.design_md_b64#}}",
     "mod_cs_b64": "{{#code.mod_cs_b64#}}",
-    "template_contract_version": "live-studio-template-2"
+    "template_contract_version": "live-studio-template-3"
   }
 }
 ```

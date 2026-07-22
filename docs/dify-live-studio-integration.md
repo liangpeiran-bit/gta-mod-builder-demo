@@ -45,7 +45,7 @@ The repository snapshot under `templates/live-studio/references/shvdn/` is the v
 
 For Dify, import the generated Markdown pack under `docs/dify-knowledge/shvdn/` into a Dify Knowledge Base, for example `GTA5 SHVDN v3 Reference`. `Mod.cs Generator` and `QA Fixer` must use Knowledge Base retrieval output as their SHVDN context.
 
-Also import `docs/dify-knowledge/live-studio-template/template-contract.md` into Dify. This is the fixed template API contract for generated `Mod.cs`, covering `LiveStudioClient`, `ChatEvent.Content`, `GiftEvent.GiftId` as a string, `GiftEvent.RepeatEnd`, and `MainThreadDispatcher.Enqueue(...)`. These are not SHVDN APIs, so the SHVDN knowledge pack alone is not enough.
+Also import `docs/dify-knowledge/live-studio-template/template-contract.md` into Dify. This is the fixed template v3 API contract for generated gameplay, covering main-thread hook dispatch, `ChatEvent.Content`, and the fixed `TriggerGiftOnce` / `TriggerGiftEveryEvent` helpers. These are not SHVDN APIs, so the SHVDN knowledge pack alone is not enough.
 
 Do not write prompts that tell Dify to "look at" local repository paths. Those paths are only visible to GitHub Actions and local developers.
 
@@ -133,7 +133,7 @@ The `Interaction Map` must be implementation-ready:
 | Trigger | Behavior | Notes |
 | --- | --- | --- |
 | chat "boost" | Boost the player's current vehicle for 5 seconds. | 5 second cooldown. |
-| Rose (gift_id: 5655) | Heal the player and set armor to 100. | Trigger only on RepeatEnd. |
+| Rose (gift_id: 5655) | Heal the player and set armor to 100. | One-shot via TriggerGiftOnce. |
 ```
 
 ### GeneratedGameplay.cs Generator
@@ -155,16 +155,16 @@ namespace ModProject
 
 Rules:
 
-- Use `ChatEvent`, `GiftEvent`, `EnqueueGameplay(...)`, and the partial hooks from the fixed template.
+- Use `ChatEvent`, `GiftEvent`, `TriggerGiftOnce(...)` / `TriggerGiftEveryEvent(...)`, and the partial hooks from the fixed template.
 - Use `chat.Content` for chat text. Do not use `chat.Message` or `chat.Text`.
-- `gift.GiftId` is a `string`; compare it with quoted values such as `"5655"`.
+- Pass confirmed gift ids as quoted strings such as `"5655"` to a fixed gift trigger helper. Pass `"*"` only when the confirmed design explicitly says any gift. Do not compare `gift.GiftId` directly.
 - Do not generate a constructor, `class Mod : Script`, `HandleEvent`, WebSocket code, parsers, or dispatcher classes.
 - Track spawned vehicles as `Vehicle` objects. Do not store handles and do not use `new Vehicle(handle)`.
 - Prefer fully qualified UI calls: `GTA.UI.Screen.ShowSubtitle(...)` and `GTA.UI.Notification.Show(...)`.
 - Do not regenerate template support classes.
-- Do not call `World.*`, `Game.*`, `Ped`, `Vehicle`, or UI APIs directly from WebSocket callbacks.
-- Use `EnqueueGameplay(...)` for game-world changes triggered by chat or gifts.
-- Default gift behavior should check `gift.RepeatEnd` so combo gifts do not fire repeatedly.
+- All generated hooks already run on the GTA main thread; call GTA/SHVDN APIs directly inside them.
+- Do not create WebSocket callbacks, dispatchers, `Task.Run`, custom threads, thread-pool work, or timers.
+- Use `TriggerGiftOnce(...)` for default one-shot behavior. It owns combo-end handling and the missing-terminal fallback. Use `TriggerGiftEveryEvent(...)` only when the design explicitly requests every combo event.
 - Use cooldowns and bounded state for audience-triggered effects.
 - Do not use `GTA.KeyEventArgs`; use `System.Windows.Forms.KeyEventArgs` / `KeyEventArgs`.
 - Do not read set-only vehicle multiplier properties. If setting engine multipliers, reset them to `1.0f`.
@@ -212,8 +212,8 @@ Check `DESIGN.md` against `GeneratedGameplay.cs`:
 - Every `Interaction Map` row has a code path.
 - Every chat trigger checks the correct keyword.
 - Every gift trigger checks the exact `gift_id`.
-- Combo gifts use `RepeatEnd` unless the design says otherwise.
-- All GTA world mutations triggered from `OnChat` or `OnGift` are inside `EnqueueGameplay(...)`.
+- Gift handlers use `TriggerGiftOnce(...)` or `TriggerGiftEveryEvent(...)` according to the confirmed design.
+- Generated hooks rely on fixed main-thread dispatch and do not create their own threads, timers, dispatchers, or queues.
 - No unsupported APIs or C# 8+ syntax.
 - Any non-template SHVDN API usage exists in the retrieved SHVDN Knowledge Base context.
 
@@ -253,7 +253,7 @@ Body:
     "assembly_name": "{{#code.assembly_name#}}",
     "design_md_b64": "{{#code.design_md_b64#}}",
     "mod_cs_b64": "{{#code.mod_cs_b64#}}"
-    ,"template_contract_version": "live-studio-template-2"
+    ,"template_contract_version": "live-studio-template-3"
   }
 }
 ```
@@ -285,7 +285,7 @@ Create a LIVE Studio GTA5 mod where Rose heals the player and gives 100 armor.
 Expected:
 
 - Gift resolver uses `gift_id: 5655`.
-- `GeneratedGameplay.cs` checks `gift.GiftId == "5655"` and `gift.RepeatEnd`.
+- `GeneratedGameplay.cs` calls `TriggerGiftOnce(gift, "5655", ...)`.
 - Build status page eventually publishes a zip.
 
 ### Blocked Request Demo
