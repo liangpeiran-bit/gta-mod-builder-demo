@@ -1,0 +1,8 @@
+{
+  "type": "subscribeResult",
+  "id": "gta-mod",
+  "data": {
+    "status": "ok",
+    "name": "IM_MESSAGE_TRANSPORT"
+  }
+}

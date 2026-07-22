@@ -10,7 +10,7 @@ User request
 -> LIVE Studio Scope Gate
 -> Gift Catalog Resolver
 -> DESIGN.md Generator
--> Mod.cs Generator
+-> GeneratedGameplay.cs Generator
 -> QA Fixer
 -> Build Payload
 -> GitHub Actions
@@ -22,7 +22,7 @@ User request
 Dify generates only these files:
 
 - `DESIGN.md`
-- `ModProject/Mod.cs`
+- `ModProject/GeneratedGameplay.cs`
 
 GitHub Actions owns the fixed template:
 
@@ -30,13 +30,14 @@ GitHub Actions owns the fixed template:
 - `LiveStudioParser`
 - `LiveStudioEvents`
 - `MainThreadDispatcher`
+- `ModProject/Mod.cs` Script lifecycle and event routing
 - `ModProject.csproj`
 - `Directory.Build.props`
 - `scripts/build-mod.ps1`
 - `references/shvdn/INDEX.md`
 - `references/shvdn/capabilities.json`
 
-Do not ask Dify to regenerate the WebSocket client, parser, dispatcher, project file, or build script.
+Do not ask Dify to regenerate the WebSocket client, parser, dispatcher, Script lifecycle, project file, or build script.
 
 ## SHVDN Knowledge Visibility
 
@@ -135,33 +136,34 @@ The `Interaction Map` must be implementation-ready:
 | Rose (gift_id: 5655) | Heal the player and set armor to 100. | Trigger only on RepeatEnd. |
 ```
 
-### Mod.cs Generator
+### GeneratedGameplay.cs Generator
 
-Generate only `ModProject/Mod.cs`.
+Generate only `ModProject/GeneratedGameplay.cs`.
 
 Required structure:
 
 ```csharp
 namespace ModProject
 {
-    public class Mod : Script
+    public partial class Mod
     {
-        // ...
+        partial void OnChat(ChatEvent chat) { }
+        partial void OnGift(GiftEvent gift) { }
     }
 }
 ```
 
 Rules:
 
-- Use `LiveStudioClient`, `ChatEvent`, `GiftEvent`, and `MainThreadDispatcher` from the fixed template.
+- Use `ChatEvent`, `GiftEvent`, `EnqueueGameplay(...)`, and the partial hooks from the fixed template.
 - Use `chat.Content` for chat text. Do not use `chat.Message` or `chat.Text`.
 - `gift.GiftId` is a `string`; compare it with quoted values such as `"5655"`.
-- `LiveStudioClient` `onEvent` expects `Action<LiveStudioEvent>`; use `HandleEvent(LiveStudioEvent evt)`, not `HandleEvent(object sender, object e)`.
+- Do not generate a constructor, `class Mod : Script`, `HandleEvent`, WebSocket code, parsers, or dispatcher classes.
 - Track spawned vehicles as `Vehicle` objects. Do not store handles and do not use `new Vehicle(handle)`.
 - Prefer fully qualified UI calls: `GTA.UI.Screen.ShowSubtitle(...)` and `GTA.UI.Notification.Show(...)`.
 - Do not regenerate template support classes.
 - Do not call `World.*`, `Game.*`, `Ped`, `Vehicle`, or UI APIs directly from WebSocket callbacks.
-- Use `MainThreadDispatcher.Enqueue(...)` for game-world changes.
+- Use `EnqueueGameplay(...)` for game-world changes triggered by chat or gifts.
 - Default gift behavior should check `gift.RepeatEnd` so combo gifts do not fire repeatedly.
 - Use cooldowns and bounded state for audience-triggered effects.
 - Do not use `GTA.KeyEventArgs`; use `System.Windows.Forms.KeyEventArgs` / `KeyEventArgs`.
@@ -205,17 +207,17 @@ If a required API is missing from retrieved context and is not already in the fi
 
 ### QA Fixer
 
-Check `DESIGN.md` against `Mod.cs`:
+Check `DESIGN.md` against `GeneratedGameplay.cs`:
 
 - Every `Interaction Map` row has a code path.
 - Every chat trigger checks the correct keyword.
 - Every gift trigger checks the exact `gift_id`.
 - Combo gifts use `RepeatEnd` unless the design says otherwise.
-- All GTA world mutations are inside `MainThreadDispatcher.Enqueue(...)`.
+- All GTA world mutations triggered from `OnChat` or `OnGift` are inside `EnqueueGameplay(...)`.
 - No unsupported APIs or C# 8+ syntax.
 - Any non-template SHVDN API usage exists in the retrieved SHVDN Knowledge Base context.
 
-If code is invalid, rewrite `Mod.cs` instead of explaining the issue.
+If code is invalid, rewrite `GeneratedGameplay.cs` instead of explaining the issue. Never rewrite the fixed runtime.
 
 ### Build Payload
 
@@ -251,6 +253,7 @@ Body:
     "assembly_name": "{{#code.assembly_name#}}",
     "design_md_b64": "{{#code.design_md_b64#}}",
     "mod_cs_b64": "{{#code.mod_cs_b64#}}"
+    ,"template_contract_version": "live-studio-template-2"
   }
 }
 ```
@@ -268,7 +271,7 @@ Create a LIVE Studio GTA5 mod where chat "boost" repairs and boosts the current 
 Expected:
 
 - `DESIGN.md` contains both chat triggers.
-- `Mod.cs` routes both chat triggers.
+- `GeneratedGameplay.cs` routes both chat triggers.
 - Build status page eventually publishes a zip.
 
 ### Gift Trigger Demo
@@ -282,7 +285,7 @@ Create a LIVE Studio GTA5 mod where Rose heals the player and gives 100 armor.
 Expected:
 
 - Gift resolver uses `gift_id: 5655`.
-- `Mod.cs` checks `gift.GiftId == "5655"` and `gift.RepeatEnd`.
+- `GeneratedGameplay.cs` checks `gift.GiftId == "5655"` and `gift.RepeatEnd`.
 - Build status page eventually publishes a zip.
 
 ### Blocked Request Demo

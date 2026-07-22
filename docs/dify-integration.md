@@ -3,13 +3,13 @@
 Use this repository as a no-backend LIVE Studio mod compiler:
 
 ```text
-Dify -> DESIGN.md + Mod.cs -> GitHub workflow_dispatch -> GitHub Actions -> gh-pages -> public download link
+Dify -> DESIGN.md + GeneratedGameplay.cs -> GitHub workflow_dispatch -> GitHub Actions -> gh-pages -> public download link
 ```
 
 This builder only supports the LIVE Studio template. Dify must not send a standalone `.cs` script; it must send:
 
 - `DESIGN.md`: the binding product/gameplay spec.
-- `Mod.cs`: only `ModProject/Mod.cs` business logic that uses the fixed LIVE Studio template.
+- `GeneratedGameplay.cs`: only `ModProject/GeneratedGameplay.cs` partial gameplay logic that uses the fixed LIVE Studio template.
 
 ## Dify Code Node
 
@@ -64,7 +64,7 @@ def _extract_mod_cs(text: str) -> str:
         source.find("using System"),
         source.find("using GTA"),
         source.find("namespace ModProject"),
-        source.find("public class Mod"),
+        source.find("public partial class Mod"),
     ] if idx >= 0]
     if starts:
         source = source[min(starts):]
@@ -118,7 +118,8 @@ Body:
     "build_id": "{{#code.build_id#}}",
     "assembly_name": "{{#code.assembly_name#}}",
     "design_md_b64": "{{#code.design_md_b64#}}",
-    "mod_cs_b64": "{{#code.mod_cs_b64#}}"
+    "mod_cs_b64": "{{#code.mod_cs_b64#}}",
+    "template_contract_version": "live-studio-template-2"
   }
 }
 ```
@@ -133,7 +134,7 @@ LIVE Studio DLL build submitted.
 Download page:
 {{#code.download_page#}}
 
-The build usually takes 1-3 minutes. Keep the page open until the download button appears. If the build fails, the page shows the compiler log and the generated DESIGN.md / Mod.cs.
+The build usually takes 1-3 minutes. Keep the page open until the download button appears. If the build fails, the page shows the compiler log and the generated DESIGN.md / GeneratedGameplay.cs.
 ```
 
 ## GitHub Token

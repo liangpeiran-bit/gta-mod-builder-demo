@@ -4,7 +4,7 @@ Demo repository for building GTA5 ScriptHookVDotNet v3 LIVE Studio mods generate
 
 The demo flow is:
 
-1. Dify generates `DESIGN.md` and `ModProject/Mod.cs` business logic.
+1. Dify generates `DESIGN.md` and `ModProject/GeneratedGameplay.cs` business logic.
 2. Dify base64-encodes both files and calls this repository's GitHub Actions workflow.
 3. The workflow copies the fixed LIVE Studio template, restores `ScriptHookVDotNet3` from NuGet, builds a `.dll` on a Windows runner, packages a zip, and publishes the result to GitHub Pages.
 4. Dify returns a public status/download page to the user.
@@ -17,10 +17,10 @@ https://liangpeiran-bit.github.io/gta-mod-builder-demo/status.html?id=BUILD_ID
 
 This is a LIVE Studio demo builder. Generated mods target GTA5 Story Mode only, listen to LIVE Studio chat/gift events through `ws://127.0.0.1:60080`, and must not be used for GTA Online cheats.
 
-The stable LIVE Studio WebSocket, parser, event, dispatcher, and project files live under `templates/live-studio/`. Dify should only generate `DESIGN.md` and `ModProject/Mod.cs`.
+The stable LIVE Studio WebSocket, parser, event, dispatcher, Script lifecycle, and project files live under `templates/live-studio/`. Dify should only generate `DESIGN.md` and `ModProject/GeneratedGameplay.cs`.
 
 The template also bundles SHVDN knowledge under `templates/live-studio/references/shvdn/`: `INDEX.md` for human navigation and `capabilities.json` for machine-readable API lookup. This is the repository source of truth.
 
-Dify cannot read repository paths automatically. Import the generated Markdown knowledge pack under `docs/dify-knowledge/shvdn/` into a Dify Knowledge Base, then connect that retrieval output to `Mod.cs Generator` and `QA Fixer`.
+Dify cannot read repository paths automatically. Import the generated Markdown knowledge pack under `docs/dify-knowledge/shvdn/` into a Dify Knowledge Base, then connect that retrieval output to the gameplay generator and repair agent.
 
-Also import `docs/dify-knowledge/live-studio-template/template-contract.md` so Dify knows the fixed template API, including `ChatEvent.Content`, string `GiftEvent.GiftId`, and `MainThreadDispatcher.Enqueue(...)`.
+The machine-readable `templates/live-studio/template-contract.json` versions the boundary. The generated gameplay contract exposes `ChatEvent.Content`, string `GiftEvent.GiftId`, normalized `GiftEvent.RepeatEnd`, and `EnqueueGameplay(...)`.

@@ -1,0 +1,15 @@
+{
+  "type": "subscribeResult",
+  "data": {
+    "common": {
+      "method": "WebcastChatMessage",
+      "msgId": "chat-1",
+      "createTime": "1720000000000"
+    },
+    "user": {
+      "id": "viewer-1",
+      "nickname": "Viewer"
+    },
+    "content": "boost"
+  }
+}

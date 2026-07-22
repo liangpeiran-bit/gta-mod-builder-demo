@@ -49,11 +49,15 @@ namespace ModProject.LiveStudio
                 case "WebcastGiftMessage":
                 {
                     var gift = GetDict(body, "gift");
-                    var giftId = GetString(gift, "id");
+                    var giftId = GetString(body, "giftId");
+                    if (string.IsNullOrEmpty(giftId))
+                    {
+                        giftId = GetString(gift, "id");
+                    }
                     var giftName = GetString(gift, "name");
                     var diamondCount = (int)GetLong(gift, "diamondCount");
                     var repeatCount = (int)GetLong(body, "repeatCount");
-                    var repeatEnd = GetLong(body, "repeatEnd") != 0L;
+                    var repeatEnd = GetBool(body, "repeatEnd");
                     var comboCount = (int)GetLong(body, "comboCount");
                     return new GiftEvent(
                         msgId,
@@ -89,6 +93,20 @@ namespace ModProject.LiveStudio
             if (d == null || !d.TryGetValue(key, out var v) || v == null) return 0L;
             try { return Convert.ToInt64(v); }
             catch { return 0L; }
+        }
+
+        private static bool GetBool(Dictionary<string, object> d, string key)
+        {
+            if (d == null || !d.TryGetValue(key, out var value) || value == null) return false;
+            if (value is bool boolean) return boolean;
+
+            var text = value.ToString();
+            if (string.Equals(text, "1", StringComparison.Ordinal)) return true;
+            if (string.Equals(text, "0", StringComparison.Ordinal)) return false;
+            if (bool.TryParse(text, out var parsed)) return parsed;
+
+            try { return Convert.ToInt64(value) != 0L; }
+            catch { return false; }
         }
     }
 }

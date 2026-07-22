@@ -1,0 +1,23 @@
+{
+  "type": "subscribeResult",
+  "data": {
+    "common": {
+      "method": "WebcastGiftMessage",
+      "msgId": "gift-combo-1",
+      "createTime": "1720000000003"
+    },
+    "user": {
+      "id": "viewer-1",
+      "nickname": "Viewer"
+    },
+    "giftId": 5655,
+    "gift": {
+      "id": "5655",
+      "name": "Rose",
+      "diamondCount": 1
+    },
+    "repeatCount": 1,
+    "repeatEnd": 0,
+    "comboCount": 1
+  }
+}
