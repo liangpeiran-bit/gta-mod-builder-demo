@@ -1,0 +1,30 @@
+{
+  "contract_version": "live-studio-template-2",
+  "live_studio_version": "1.31.0",
+  "generated_file": "ModProject/GeneratedGameplay.cs",
+  "namespace": "ModProject",
+  "class_shape": "public partial class Mod",
+  "available_types": [
+    "ModProject.LiveStudio.ChatEvent",
+    "ModProject.LiveStudio.GiftEvent"
+  ],
+  "available_hooks": [
+    "partial void InitializeGameplay()",
+    "partial void OnGameplayTick()",
+    "partial void OnGameplayAborted()",
+    "partial void OnChat(ChatEvent chat)",
+    "partial void OnGift(GiftEvent gift)"
+  ],
+  "helpers": [
+    "bool EnqueueGameplay(Action action)",
+    "void LogGameplay(string message)"
+  ],
+  "gift_id_type": "string",
+  "repeat_end_type": "normalized boolean",
+  "forbidden_generated_types": [
+    "LiveStudioClient",
+    "LiveStudioParser",
+    "LiveStudioEvent",
+    "MainThreadDispatcher"
+  ]
+}
