@@ -1,0 +1,35 @@
+{
+  "contract_version": "live-studio-template-3",
+  "live_studio_version": "1.31.0",
+  "generated_file": "ModProject/GeneratedGameplay.cs",
+  "namespace": "ModProject",
+  "class_shape": "public partial class Mod",
+  "available_types": [
+    "ModProject.LiveStudio.ChatEvent",
+    "ModProject.LiveStudio.GiftEvent"
+  ],
+  "available_hooks": [
+    "partial void InitializeGameplay()",
+    "partial void OnGameplayTick()",
+    "partial void OnGameplayAborted()",
+    "partial void OnChat(ChatEvent chat)",
+    "partial void OnGift(GiftEvent gift)"
+  ],
+  "helpers": [
+    "void TriggerGiftOnce(GiftEvent gift, string expectedGiftId, Action<GiftEvent> action)",
+    "void TriggerGiftEveryEvent(GiftEvent gift, string expectedGiftId, Action<GiftEvent> action)",
+    "void LogGameplay(string message)"
+  ],
+  "hook_thread": "GTA Script.Tick main thread",
+  "gift_once_policy": "repeatEnd or 1200ms terminal fallback",
+  "any_gift_id": "*",
+  "gift_id_type": "string",
+  "repeat_end_type": "normalized boolean",
+  "forbidden_generated_types": [
+    "LiveStudioClient",
+    "LiveStudioParser",
+    "LiveStudioEvent",
+    "SubscriptionEvent",
+    "MainThreadDispatcher"
+  ]
+}
